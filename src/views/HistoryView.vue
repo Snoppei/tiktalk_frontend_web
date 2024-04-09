@@ -3,7 +3,7 @@
 </script>
 
 <template>
-<p>sadad</p>
+<p></p>
 </template>
 
 <style scoped>
