@@ -30,7 +30,7 @@ export default {
               <p>Пароль</p>
               <input type="password" v-model="password" placeholder="">
             </div>
-            <button type="submit">Войти</button>
+            <button class="auth" type="submit">Войти</button>
         </form>
       </div>
     </div>
@@ -77,7 +77,7 @@ input {
   border-radius: 8px;
 }
   
-button {
+.auth {
   display: block;
   width: 50%;
   height: 64px;
