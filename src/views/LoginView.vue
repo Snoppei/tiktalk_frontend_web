@@ -24,11 +24,11 @@ export default {
         <form @submit="onSubmit">
             <div>
               <p>Логин</p>
-              <input type="text" v-model="login" placeholder="">
+              <input class="fields" type="text" v-model="login" placeholder="">
             </div>
             <div>
               <p>Пароль</p>
-              <input type="password" v-model="password" placeholder="">
+              <input class="fields" type="text" v-model="password" placeholder="">
             </div>
             <button class="auth" type="submit">Войти</button>
         </form>
@@ -68,7 +68,7 @@ h1 {
   margin-bottom: 40px;
 }
   
-input {
+.fields {
   width: 436px;
   height: 53px;
   padding: 10px;
