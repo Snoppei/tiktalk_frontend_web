@@ -4,12 +4,13 @@ export default {
     return {
       podcast: {
         imageUrl: "../src/assets/podcastPic.png",
+        audioUrl: "../src/assets/sample-3s.mp3",
         title: "Загадки Вселенной",
         author: "Космический Голос",
         description: "Путешествие по тайнам космоса. Черные дыры, темная материя, жизнь на других планетах - мы обсуждаем все самые интересные загадки Вселенной."
       },
       complaints: [
-        { id: 1, title: "Некорректные данные о черных дырах", message: "1" },
+        { id: 1, title: "Некорректные данные о черных дырах", message: "1123321231313213123123132131231312313213213123" },
         { id: 2, title: "Слишком много научных терминов, сложно для понимания", message: "2" },
         { id: 3, title: "Автор предвзят в своих выводах о жизни на Марсе", message: "3" },
         { id: 4, title: "Плохое качество звука", message: "4" },
@@ -17,13 +18,94 @@ export default {
       ],
       currentPage: 1,
       totalPages: 1,
-      selectedComplaint: null
+      selectedComplaint: null,
+      isPlaying: false,
+      currentTime: '00:00',
+      remainingTime: '',
+      volume: 1.0,
+      intervalId: null,
+      hasNextPage: true
     };
   },
   methods: {
     selectComplaint(complaint) {
       this.selectedComplaint = complaint;
+    },
+    play() {
+      if (!this.isPlaying) {
+        this.player.play();
+        this.isPlaying = true;
+        this.intervalId = setInterval(this.updateProgress, 100); // Update progress bar every 100ms
+      }
+    },
+    pause() {
+      if (this.isPlaying) {
+        this.player.pause();
+        this.isPlaying = false;
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+    },
+    updateProgress() {
+      const currentTime = Math.floor(this.player.currentTime);
+      const duration = Math.floor(this.player.duration);
+
+      // Format the current time
+      this.currentTime = this.formatTime(currentTime);
+
+      // Display remaining time or total duration based on playback state
+      if (this.isPlaying) {
+        // Calculate and display remaining time while playing
+        this.remainingTime = this.formatTime(duration - currentTime);
+      } else {
+        // Display total duration when not playing
+        this.remainingTime = this.formatTime(duration);
+      }
+
+      // Update the progress bar
+      const progress = (currentTime / duration) * 100;
+      this.progressPercentage = progress;
+    },
+    formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.round(seconds % 60); // Round to nearest whole number
+      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    },
+    onPlay() {
+    },
+    onPause() {
+    },
+    onEnd() {
+      this.isPlaying = false;
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+      this.currentTime = '00:00';
+      // Set remainingTime to the total duration
+      this.remainingTime = this.formatTime(this.player.duration); 
+      this.progressPercentage = 0;
+    },
+    togglePlayPause() {
+      if (this.isPlaying) {
+        this.pause();
+      } else {
+        this.play();
+      }
+    },
+    setVolume(value) {
+      this.player.volume = parseFloat(value);
+      this.volume = parseFloat(value);
     }
+  },
+  computed: {
+  playPauseClass() {
+    return this.isPlaying ? 'pause' : 'play';
+  }
+},
+  mounted() {
+    this.player = this.$refs.player; // Get reference to the audio element
+    this.player.addEventListener('loadedmetadata', () => {
+    this.remainingTime = this.formatTime(this.player.duration);
+  });
   }
 };
 </script>
@@ -74,37 +156,28 @@ export default {
         <div class="podcast-player">
           <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
             <source :src="podcast.audioUrl" type="audio/mpeg">
-              Your browser does not support the audio tag.
             </source>
           </audio>
-  
           <div class="player-controls">
-            <button @click="play" :disabled="isPlaying">Play</button>
-            <button @click="pause" :disabled="!isPlaying">Pause</button>
+            <button @click="togglePlayPause" :class="playPauseClass"></button>
+            <div class="player-time">
+              <span class="current-time">{{ currentTime }}</span>
+              <p class="slash"> / </p>
+              <span class="remaining-time">{{ remainingTime }}</span>
+            </div>
             <div class="progress-bar">
               <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
             </div>
             <div class="volume-control">
-              <input type="range" v-model="volume" min="0" max="1" step="0.01" />
-              <i class="fas fa-volume-up" v-if="volume > 0"></i>
-              <i class="fas fa-volume-off" v-if="volume === 0"></i>
+              <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)"/>
             </div>
-          </div>
-          <div class="player-time">
-            <span class="current-time">{{ currentTime }}</span>
-            <span class="remaining-time">{{ remainingTime }}</span>
           </div>
         </div>
   
         <div class="podcast-actions">
-          <button>Удалить подкаст</button>
-          <button>Одобрить подкаст</button>
-        </div>
-
-        <div class="podcast-actions">
-          <button>Удалить подкаст</button>
-          <button>Одобрить подкаст</button>
-        </div>
+          <button class="delete">Удалить</button>
+          <button class="approve">Одобрить</button>
+        </div> 
       </main>
       <footer>
         <img src="../assets/logo.png" alt="Logo">
@@ -113,8 +186,47 @@ export default {
   </template>
   
 <style>
+.current-time {
+  color: #000000;
+}
+.remaining-time {
+  color: #000000;
+}
+.slash {
+  color: #000000;
+}
+.podcast-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 50%;
+}
 .complaints-unit{
     display: block;
+}
+.delete {
+  display: block;
+  width: 300px;
+  height: 64px;
+  font-size: 30px;
+  padding: 10px;
+  background-color: #FF453A;
+  color: #fff;
+  border: 1px solid #FF453A;
+  border-radius: 16px;
+  margin: 0 0;
+}
+.approve {
+  display: block;
+  width: 300px;
+  height: 64px;
+  font-size: 30px;
+  padding: 10px;
+  background-color: #3067DE;
+  color: #fff;
+  border: 1px solid #3067DE;
+  border-radius: 16px;
+  margin: 0 0;
 }
 .menu {
     display: grid;
@@ -142,27 +254,49 @@ header {
   justify-content: space-between;
 }
 .podcast-player {
+  border: 1px solid #EFF1F2;
+  background-color: #EFF1F2;
+  border-radius: 15px;
   display: flex;
   flex-direction: column;
-  margin-top: 20px;
+  width: 60%;
+  padding: 10px;
+  margin: 20px 0 20px 0;
 }
 
 .player-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
 }
 
 .player-controls button {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  width: 15px;
+  height: 17px;
+  padding: 5px;
+  background-color: transparent;
+  background-image: url('../assets/play.png');
+  background-size: cover;
+  border: none;
   cursor: pointer;
 }
 
+.player-controls button.play {
+  background-image: url('../assets/play.png');
+  width: 15px;
+  height: 17px;
+  padding: 5px;
+}
+
+.player-controls button.pause {
+  background-image: url('../assets/pause.png');
+  width: 15px;
+  height: 16px;
+  padding: 5px;
+}
+
 .progress-bar {
-  width: 100%;
+  width: 50%;
   height: 5px;
   background-color: #ccc;
   border-radius: 5px;
@@ -171,7 +305,7 @@ header {
 
 .progress {
   height: 100%;
-  background-color: #4caf50;
+  background-color: #3067DE;
   transition: width 0.5s ease;
 }
 
@@ -182,42 +316,13 @@ header {
 
 .volume-control input[type="range"] {
   width: 100px;
-  margin-right: 10px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.volume-control input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background-color: #4caf50;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.volume-control input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background-color: #4caf50;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.volume-control i {
-  font-size: 20px;
-  cursor: pointer;
+  margin-right: 0;
+  margin-bottom: 0;
 }
 
 .player-time {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
 }
 
 .player-time span {
