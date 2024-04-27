@@ -63,31 +63,30 @@ export default {
         <div class="nav-buttons">
             <router-link to="/metrics">Метрики</router-link>
             <router-link to="/podcasts">Список подкастов</router-link>
-            <router-link to="/history">История</router-link>
         </div>
         <button class="logout" @click="logout">Выйти</button>
       </header>
       <main>
         <div class="list">
           <h1>Список подкастов с жалобами</h1>
-          <table>
-            <thead>
-              <tr class="tr-list">
-                <th>Название</th>
-                <th>Жалобы</th>
-                <th>Длительность</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="tr-list" v-for="podcast in podcasts" :key="podcast.id">
-                <td>
-                <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
-                </td>
-                <td>{{ podcast.complaints }}</td>
-                <td>{{ podcast.duration }}</td>
-              </tr>
-            </tbody>
-          </table>
+            <table>
+              <thead>
+                <tr class="tr-list">
+                  <th>Название</th>
+                  <th>Жалобы</th>
+                  <th>Длительность</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="tr-list" v-for="podcast in podcasts" :key="podcast.id">
+                  <td>
+                  <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
+                  </td>
+                  <td>{{ podcast.complaints }}</td>
+                  <td>{{ podcast.duration }}</td>
+                </tr>
+              </tbody>
+            </table>
           <div class="pagination">
             <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"><</button>
             <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage">></button>
@@ -126,6 +125,9 @@ thead {
   grid-template-columns: repeat(3, 1fr);
   /* justify-content: space-between; */
 }
+table {
+  background-color: rgba(26, 27, 34, 0.7);
+}
 td {
   text-align: center;
 }
@@ -133,6 +135,7 @@ footer {
   display: flex;
   flex-direction: row;
   justify-content: center;
+  margin: 10px 0;
 }
 .pagination {
   display: flex;
@@ -149,11 +152,11 @@ footer {
 
 }
 .podcast-page {
-    margin: 10px 0;
     width: 1280px;
     height: 100%;
 }
 header {
+  margin: 10px 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -162,7 +165,7 @@ header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 400px;
+  width: 250px;
 }
 .pagination-button {
   display: block;

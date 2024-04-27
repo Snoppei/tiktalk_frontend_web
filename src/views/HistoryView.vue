@@ -61,7 +61,6 @@ export default {
         <div class="nav-buttons">
             <router-link to="/metrics">Метрики</router-link>
             <router-link to="/podcasts">Список подкастов</router-link>
-            <router-link to="/history">История</router-link>
         </div>
         <button class="logout" @click="logout">Выйти</button>
       </header>
@@ -155,12 +154,6 @@ header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-}
-.nav-buttons {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  width: 400px;
 }
 .pagination-button {
   display: block;

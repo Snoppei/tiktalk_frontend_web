@@ -7,10 +7,10 @@ export default {
         audioUrl: "../src/assets/sample-3s.mp3",
         title: "Загадки Вселенной",
         author: "Космический Голос",
-        description: "Путешествие по тайнам космоса. Черные дыры, темная материя, жизнь на других планетах - мы обсуждаем все самые интересные загадки Вселенной."
+        description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. "
       },
       complaints: [
-        { id: 1, title: "Некорректные данные о черных дырах", message: "1123321231313213123123132131231312313213213123" },
+        { id: 1, title: "Тема жалобы 1", message: "Содержание жалобы 1" },
         { id: 2, title: "Слишком много научных терминов, сложно для понимания", message: "2" },
         { id: 3, title: "Автор предвзят в своих выводах о жизни на Марсе", message: "3" },
         { id: 4, title: "Плохое качество звука", message: "4" },
@@ -49,26 +49,18 @@ export default {
     updateProgress() {
       const currentTime = Math.floor(this.player.currentTime);
       const duration = Math.floor(this.player.duration);
-
-      // Format the current time
       this.currentTime = this.formatTime(currentTime);
-
-      // Display remaining time or total duration based on playback state
       if (this.isPlaying) {
-        // Calculate and display remaining time while playing
         this.remainingTime = this.formatTime(duration - currentTime);
       } else {
-        // Display total duration when not playing
         this.remainingTime = this.formatTime(duration);
       }
-
-      // Update the progress bar
       const progress = (currentTime / duration) * 100;
       this.progressPercentage = progress;
     },
     formatTime(seconds) {
       const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.round(seconds % 60); // Round to nearest whole number
+      const remainingSeconds = Math.round(seconds % 60);
       return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     },
     onPlay() {
@@ -80,7 +72,6 @@ export default {
       clearInterval(this.intervalId);
       this.intervalId = null;
       this.currentTime = '00:00';
-      // Set remainingTime to the total duration
       this.remainingTime = this.formatTime(this.player.duration); 
       this.progressPercentage = 0;
     },
@@ -102,7 +93,7 @@ export default {
   }
 },
   mounted() {
-    this.player = this.$refs.player; // Get reference to the audio element
+    this.player = this.$refs.player;
     this.player.addEventListener('loadedmetadata', () => {
     this.remainingTime = this.formatTime(this.player.duration);
   });
@@ -116,7 +107,6 @@ export default {
         <div class="nav-buttons">
             <router-link to="/metrics">Метрики</router-link>
             <router-link to="/podcasts">Список подкастов</router-link>
-            <router-link to="/history">История</router-link>
         </div>
         <button class="logout" @click="logout">Выйти</button>
       </header>
@@ -127,17 +117,16 @@ export default {
                 <img :src="podcast.imageUrl" alt="Podcast Image" />
                 <h2>{{ podcast.title }}</h2>
                 <p class="author">Автор: {{ podcast.author }}</p>
-                <p class="description">{{ podcast.description }}</p>
             </div>
     
             <div class="complaints">
                 <h3>Количество жалоб: {{ complaints.length }}</h3>
                 <div class="menu">
-                    <div>
+                    <div class="listOfComplaints">
                         <table>
                             <tbody>
-                            <tr class="complaint-unit" v-for="complaint in complaints" :key="complaint.id" @click="selectComplaint(complaint)">
-                                <td>{{ complaint.title }}</td>
+                            <tr v-for="complaint in complaints" :key="complaint.id" @click="selectComplaint(complaint)">
+                                <td class="complaint-unit">{{ complaint.title }}</td>
                             </tr>
                             </tbody>
                         </table>
@@ -152,40 +141,70 @@ export default {
                 </div>
             </div>
         </div>
-
-        <div class="podcast-player">
-          <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
-            <source :src="podcast.audioUrl" type="audio/mpeg">
-            </source>
-          </audio>
-          <div class="player-controls">
-            <button @click="togglePlayPause" :class="playPauseClass"></button>
-            <div class="player-time">
-              <span class="current-time">{{ currentTime }}</span>
-              <p class="slash"> / </p>
-              <span class="remaining-time">{{ remainingTime }}</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
-            </div>
-            <div class="volume-control">
-              <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)"/>
+        <div class="podcast-desription">
+          <p class="description">{{ podcast.description }}</p>
+        </div>
+        <div class="wrapper">
+          <div class="podcast-player">
+            <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
+              <source :src="podcast.audioUrl" type="audio/mpeg">
+              </source>
+            </audio>
+            <div class="player-controls">
+              <button @click="togglePlayPause" :class="playPauseClass"></button>
+              <div class="player-time">
+                <span class="current-time">{{ currentTime }}</span>
+                <p class="slash"> / </p>
+                <span class="remaining-time">{{ remainingTime }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
+              </div>
+              <div class="volume-control">
+                <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)"/>
+              </div>
             </div>
           </div>
         </div>
-  
         <div class="podcast-actions">
-          <button class="delete">Удалить</button>
-          <button class="approve">Одобрить</button>
+          <button class="delete">Удалить подкаст</button>
+          <button class="approve">Отклонить жалобы</button>
         </div> 
       </main>
-      <footer>
+      <footer class="footer-podcast">
         <img src="../assets/logo.png" alt="Logo">
       </footer>
     </div>
   </template>
   
 <style>
+.podcast-desription {
+  margin: 20px 0 10px 0;
+}
+.listOfComplaints {
+  background-color: rgba(26, 27, 34, 0.7);
+}
+.wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+td {
+  padding: 0;
+}
+.complaint-details {
+  padding: 0 5px 5px 5px;
+  height: 100%;
+  background-color: rgba(26, 27, 34, 0.7);
+}
+.complaint-details p {
+  padding-top: 2px;
+}
+.podcast-preview {
+  width: 100%;
+  height: auto;
+}
 .current-time {
   color: #000000;
 }
@@ -198,11 +217,20 @@ export default {
 .podcast-actions {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  width: 50%;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+}
+.complaints h3 {
+  margin-left: 5px;
+}
+.complaints {
+  background-color: #25252C;
+  width: 100%;
+  height: 100%;
 }
 .complaints-unit{
-    display: block;
+  display: block;
 }
 .delete {
   display: block;
@@ -229,12 +257,28 @@ export default {
   margin: 0 0;
 }
 .menu {
-    display: grid;
-    grid-template-columns: 3fr 4fr;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 5px;
+  padding: 5px;
+}
+.complaint-unit {
+  display: block;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  border: 1px solid #0d0d0f;
+  background-color: #1A1B22;
+}
+.pagination {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 5px;
+  margin: 5px 0 5px 0;
 }
 .complaints-section {
-    display: flex;
-    flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 3fr;
 }
 .logout {
   display: block;
@@ -327,5 +371,8 @@ header {
 
 .player-time span {
   font-size: 14px;
+}
+.footer-podcast {
+  margin: 80px 0 80px 0;
 }
 </style>
