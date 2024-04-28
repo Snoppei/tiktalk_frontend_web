@@ -7,11 +7,11 @@ import HistoryView from '../views/HistoryView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/login',
-      name: 'Login',
-      component: LoginView
-    },
+    // {
+    //   path: '/login',
+    //   name: 'Login',
+    //   component: LoginView
+    // },
     {
       path: '/podcasts',
       name: 'Podcasts',
@@ -22,11 +22,11 @@ const router = createRouter({
       name: 'Podcast',
       component: PodcastView
     },
-    {
-      path: '/history',
-      name: 'History',
-      component: HistoryView
-    }
+    // {
+    //   path: '/history',
+    //   name: 'History',
+    //   component: HistoryView
+    // }
   ]
 })
 
