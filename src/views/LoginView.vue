@@ -1,17 +1,18 @@
 <script>
-export default {
-  data () {
-    return {
-      login: '',
-      password: ''
-    }
-  },
-  methods: {
-    onSubmit () {
-      // обработка кнопки войти
-    }
-  }
-}
+// export default {
+//   data () {
+//     return {
+//       login: '',
+//       password: ''
+//     }
+//   },
+//   methods: {
+//     onSubmit () {
+//       // обработка кнопки войти
+//     }
+//   }
+// }
+
 </script>
 
 <template>

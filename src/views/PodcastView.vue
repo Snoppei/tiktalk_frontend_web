@@ -1,102 +1,25 @@
 <script>
+import { useStore } from 'vuex';
+
 export default {
-  data() {
+  setup() {
+    const store = useStore();
+    let podcast = null;
+
     return {
-      podcast: {
-        imageUrl: "../src/assets/podcastPic.png",
-        audioUrl: "../src/assets/sample-3s.mp3",
-        title: "Загадки Вселенной",
-        author: "Космический Голос",
-        description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. "
-      },
-      complaints: [
-        { id: 1, title: "Тема жалобы 1", message: "Содержание жалобы 1" },
-        { id: 2, title: "Слишком много научных терминов, сложно для понимания", message: "2" },
-        { id: 3, title: "Автор предвзят в своих выводах о жизни на Марсе", message: "3" },
-        { id: 4, title: "Плохое качество звука", message: "4" },
-        { id: 5, title: "Музыкальное оформление отвлекает", message: "5" } 
-      ],
-      currentPage: 1,
-      totalPages: 1,
-      selectedComplaint: null,
-      isPlaying: false,
-      currentTime: '00:00',
-      remainingTime: '',
-      volume: 1.0,
-      intervalId: null,
-      hasNextPage: true
+      podcast,
     };
   },
-  methods: {
-    selectComplaint(complaint) {
-      this.selectedComplaint = complaint;
-    },
-    play() {
-      if (!this.isPlaying) {
-        this.player.play();
-        this.isPlaying = true;
-        this.intervalId = setInterval(this.updateProgress, 100); // Update progress bar every 100ms
-      }
-    },
-    pause() {
-      if (this.isPlaying) {
-        this.player.pause();
-        this.isPlaying = false;
-        clearInterval(this.intervalId);
-        this.intervalId = null;
-      }
-    },
-    updateProgress() {
-      const currentTime = Math.floor(this.player.currentTime);
-      const duration = Math.floor(this.player.duration);
-      this.currentTime = this.formatTime(currentTime);
-      if (this.isPlaying) {
-        this.remainingTime = this.formatTime(duration - currentTime);
-      } else {
-        this.remainingTime = this.formatTime(duration);
-      }
-      const progress = (currentTime / duration) * 100;
-      this.progressPercentage = progress;
-    },
-    formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = Math.round(seconds % 60);
-      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-    },
-    onPlay() {
-    },
-    onPause() {
-    },
-    onEnd() {
-      this.isPlaying = false;
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      this.currentTime = '00:00';
-      this.remainingTime = this.formatTime(this.player.duration); 
-      this.progressPercentage = 0;
-    },
-    togglePlayPause() {
-      if (this.isPlaying) {
-        this.pause();
-      } else {
-        this.play();
-      }
-    },
-    setVolume(value) {
-      this.player.volume = parseFloat(value);
-      this.volume = parseFloat(value);
-    }
-  },
-  computed: {
-  playPauseClass() {
-    return this.isPlaying ? 'pause' : 'play';
-  }
-},
   mounted() {
-    this.player = this.$refs.player;
-    this.player.addEventListener('loadedmetadata', () => {
-    this.remainingTime = this.formatTime(this.player.duration);
-  });
+    const podcastId = this.$route.params.id;
+    const podcasts = this.$store.state.podcasts;
+    const foundPodcast = podcasts.find(podcast => podcast.id === parseInt(podcastId));
+
+    if (foundPodcast) {
+      this.podcast = foundPodcast;
+    } else {
+      console.error('Подкаст с таким идентификатором не найден');
+    }
   }
 };
 </script>
@@ -115,18 +38,18 @@ export default {
         <div class="complaints-section">
             <div class="podcast-preview">
                 <img :src="podcast.imageUrl" alt="Podcast Image" />
-                <h2>{{ podcast.title }}</h2>
+                <h2>{{ podcast.name }}</h2>
                 <p class="author">Автор: {{ podcast.author }}</p>
             </div>
     
             <div class="complaints">
-                <h3>Количество жалоб: {{ complaints.length }}</h3>
+                <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
                 <div class="menu">
                     <div class="listOfComplaints">
                         <table>
                             <tbody>
-                            <tr v-for="complaint in complaints" :key="complaint.id" @click="selectComplaint(complaint)">
-                                <td class="complaint-unit">{{ complaint.title }}</td>
+                            <tr v-for="complaint in podcast.complaints" :key="podcast.complaint.id" @click="selectComplaint(complaint)">
+                                <td class="complaint-unit">{{ podcast.complaint.title }}</td>
                             </tr>
                             </tbody>
                         </table>
