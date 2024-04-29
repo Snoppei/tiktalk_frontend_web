@@ -1,37 +1,37 @@
 <script>
 import { useStore } from 'vuex';
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default {
   setup() {
     const store = useStore();
     const podcasts = store.getters.PODCASTS;
+    const router = useRouter();
 
-    // Используем реактивные переменные
-    const currentPage = ref(1); // Текущая страница
-    const pageSize = 15; // Количество элементов на странице
+    const currentPage = ref(1);
+    const pageSize = 15;
 
-    // Вычисляем общее количество страниц
     const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
 
-    // Флаг, показывающий, есть ли следующая страница
     const hasNextPage = computed(() => currentPage.value < totalPages.value);
 
-    // Метод для перехода на предыдущую страницу
+    const logout = () => {
+      router.push('/login');
+    };
+
     const prevPage = () => {
       if (currentPage.value > 1) {
         currentPage.value--;
       }
     };
 
-    // Метод для перехода на следующую страницу
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
         currentPage.value++;
       }
     };
 
-    // Функция, возвращающая отфильтрованный список подкастов для текущей страницы
     const paginatedPodcasts = computed(() => {
       const startIndex = (currentPage.value - 1) * pageSize;
       const endIndex = startIndex + pageSize;
@@ -45,6 +45,7 @@ export default {
       hasNextPage,
       prevPage,
       nextPage,
+      logout
     };
   },
 };
@@ -55,6 +56,7 @@ export default {
       <div class="nav-buttons">
         <router-link to="/metrics">Метрики</router-link>
         <router-link to="/podcasts">Список подкастов</router-link>
+        <router-link to="/history">История</router-link>
       </div>
       <button class="logout" @click="logout">Выйти</button>
     </header>
@@ -166,7 +168,7 @@ header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  width: 250px;
+  width: 450px;
 }
 .pagination-button {
   display: block;
