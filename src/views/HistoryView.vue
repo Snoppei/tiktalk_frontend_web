@@ -1,100 +1,93 @@
 <script>
-// export default {
-//   data () {
-//     return {
-//       podcasts: [
-//         { id: 1, name: 'Подкаст 1', solution: "Подкаст одобрен", duration: '12:34' },
-//         { id: 2, name: 'Подкаст 2', solution: "Подкаст одобрен", duration: '13:45' },
-//         { id: 3, name: 'Подкаст 3', solution: "Подкаст одобрен", duration: '14:56' },
-//         { id: 4, name: 'Подкаст 4', solution: "Подкаст одобрен", duration: '10:23' },
-//         { id: 5, name: 'Подкаст 5', solution: "Подкаст одобрен", duration: '15:01' },
-//         { id: 6, name: 'Подкаст 6', solution: "Подкаст одобрен", duration: '09:47' },
-//         { id: 7, name: 'Подкаст 7', solution: "Подкаст одобрен", duration: '11:59' },
-//         { id: 8, name: 'Подкаст 8', solution: "Подкаст одобрен", duration: '14:32' },
-//         { id: 9, name: 'Подкаст 9', solution: "Подкаст одобрен", duration: '10:56' },
-//         { id: 11, name: 'Подкаст 11', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 12, name: 'Подкаст 12', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 130, name: 'Подкаст 130', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 104, name: 'Подкаст 104', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 120, name: 'Подкаст 120', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 1110, name: 'Подкаст 1110', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 1034, name: 'Подкаст 1034', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 1120, name: 'Подкаст 1120', solution: "Подкаст одобрен", duration: '12:18' },
-//         { id: 1044, name: 'Подкаст 1044', solution: "Подкаст одобрен", duration: '12:18' },
-//       ],
-//       currentPage: 1,
-//       totalPages: 2
-//     }
-//   },
-//   mounted () {
-//     this.getPodcasts()
-//   },
-//   methods: {
-//     getPodcasts () {
-//       // загрузить список подкастов
-//     },
-//     prevPage () {
-//       if (this.currentPage > 1) {
-//         this.currentPage--;
-//         this.getPodcasts();
-//       }
-//     },
-//     nextPage () {
-//       if (this.currentPage < this.totalPages) {
-//         this.currentPage++;
-//         this.getPodcasts();
-//       }
-//     },
-//     logout () {
-//     },
-//     computed: {
-//       hasNextPage () {
-//         return this.currentPage < this.totalPages;
-//       }
-//     }
-//   }
-// }
+import { useStore } from 'vuex';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+
+export default {
+  setup() {
+    const store = useStore();
+    const podcasts = store.getters.HISTORY || [];
+    const router = useRouter();
+    const currentPage = ref(1);
+    const pageSize = 15;
+
+    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
+
+    const hasNextPage = computed(() => currentPage.value < totalPages.value);
+
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
+      }
+    };
+
+    const logout = () => {
+      router.push('/login');
+    };
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      }
+    };
+
+    const paginatedPodcasts = computed(() => {
+      const startIndex = (currentPage.value - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      return podcasts.slice(startIndex, endIndex);
+    });
+
+    return {
+      paginatedPodcasts,
+      currentPage,
+      totalPages,
+      hasNextPage,
+      prevPage,
+      nextPage,
+      logout
+    };
+  },
+};
 </script>
 <template>
-    <div class="podcast-page">
-        <header>
-        <div class="nav-buttons">
-            <router-link to="/metrics">Метрики</router-link>
-            <router-link to="/podcasts">Список подкастов</router-link>
+  <div class="podcast-page">
+    <header>
+      <div class="nav-buttons">
+        <router-link to="/metrics">Метрики</router-link>
+        <router-link to="/podcasts">Список подкастов</router-link>
+        <router-link to="/history">История</router-link>
+      </div>
+      <button class="logout" @click="logout">Выйти</button>
+    </header>
+    <main>
+      <div class="list">
+        <h1>Список подкастов с жалобами</h1>
+        <table class="podcasts">
+          <thead>
+            <tr class="tr-list">
+              <th>Название</th>
+              <th>Решение</th>
+              <th>Длительность</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="tr-list" v-for="podcast in paginatedPodcasts" :key="podcast.id">
+              <td>{{ podcast.name }}</td>
+              <td>{{ podcast.decision }}</td>
+              <td>{{ podcast.duration }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
-        <button class="logout" @click="logout">Выйти</button>
-      </header>
-      <main>
-        <div class="list">
-          <h1>Список подкастов с жалобами</h1>
-          <table>
-            <thead>
-              <tr class="tr-list">
-                <th>Название</th>
-                <th>Решение</th>
-                <th>Длительность</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="tr-list" v-for="podcast in podcasts" :key="podcast.id">
-                <td>
-                <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
-                </td>
-                <td>{{ podcast.solution }}</td>
-                <td>{{ podcast.duration }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="pagination">
-            <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"><</button>
-            <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage">></button>
-          </div>
-        </div>
-      </main>
-      <footer>
-        <img src="../assets/logo.png" alt="Logo">
-      </footer>
-    </div>
+      </div>
+    </main>
+    <footer>
+      <img src="../assets/logo.png" alt="Logo">
+    </footer>
+  </div>
 </template>
 <style>
 .logout {
