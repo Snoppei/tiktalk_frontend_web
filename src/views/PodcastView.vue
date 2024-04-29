@@ -1,12 +1,13 @@
 <script>
 import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
 
 export default {
   setup() {
     const store = useStore();
     const route = useRoute();
+    const router = useRouter();
     const podcastId = route.params.id;
     const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
 
@@ -20,12 +21,15 @@ export default {
 
     const player = ref(null);
 
-    // Пагинация
-    let currentPage = ref(1); // Текущая страница
-    const pageSize = 7; // Количество жалоб на странице
+    let currentPage = ref(1);
+    const pageSize = 7;
 
     const selectComplaint = (complaint) => {
       selectedComplaint.value = complaint;
+    };
+
+    const logout = () => {
+      router.push('/login');
     };
 
     const filteredComplaints = ref([]);
@@ -36,7 +40,6 @@ export default {
       filteredComplaints.value = podcast.value.complaints.slice(startIndex, endIndex);
     };
 
-    // Вызываем функцию при изменении currentPage
     watch(currentPage, () => {
       updateFilteredComplaints();
     });
@@ -47,7 +50,7 @@ export default {
       if (currentPage.value > 1) {
         currentPage.value--;
       } else {
-        currentPage.value = 1; // Обнуляем страницу, если текущая страница уже 1
+        currentPage.value = 1;
       }
     };
 
@@ -55,7 +58,7 @@ export default {
       if (currentPage.value < totalPages.value) {
         currentPage.value++;
       } else {
-        currentPage.value = totalPages.value; // Устанавливаем текущую страницу на максимально возможную
+        currentPage.value = totalPages.value;
       }
     };
 
@@ -125,6 +128,15 @@ export default {
       }
     };
     
+    const deletePodcast = () => {
+      store.commit('DELETE_PODCAST', podcast.value.id);
+      router.push('/podcasts');
+    };
+
+    const rejectComplaints = () => {
+      store.commit('REJECT_COMPLAINTS', podcast.value.id);
+      router.push('/podcasts');
+    };
 
     onMounted(() => {
       if (player.value) {
@@ -132,8 +144,6 @@ export default {
           remainingTime.value = formatTime(player.value.duration);
         });
       }
-
-      // При монтировании компонента заполняем отфильтрованный список жалоб
       updateFilteredComplaints();
     });
 
@@ -161,12 +171,15 @@ export default {
       pageSize,
       totalPages,
       prevPage,
-      nextPage
+      nextPage,
+      deletePodcast,
+      rejectComplaints,
+      logout
     };
   },
 };
-
 </script>
+
 
 
 <template>
@@ -175,6 +188,7 @@ export default {
         <div class="nav-buttons">
             <router-link to="/metrics">Метрики</router-link>
             <router-link to="/podcasts">Список подкастов</router-link>
+            <router-link to="/history">История</router-link>
         </div>
         <button class="logout" @click="logout">Выйти</button>
       </header>
@@ -235,8 +249,8 @@ export default {
           </div>
         </div>
         <div class="podcast-actions">
-          <button class="delete">Удалить подкаст</button>
-          <button class="approve">Отклонить жалобы</button>
+          <button class="delete" @click="deletePodcast" style="cursor: pointer;">Удалить подкаст</button>
+          <button class="approve" @click="rejectComplaints" style="cursor: pointer;">Отклонить жалобы</button>
         </div> 
       </main>
       <footer class="footer-podcast">
