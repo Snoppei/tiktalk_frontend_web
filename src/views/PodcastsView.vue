@@ -1,58 +1,94 @@
 <script>
 import { useStore } from 'vuex';
+import { ref, computed } from 'vue';
+
 export default {
   setup() {
     const store = useStore();
+    const podcasts = store.getters.PODCASTS;
+
+    // Используем реактивные переменные
+    const currentPage = ref(1); // Текущая страница
+    const pageSize = 15; // Количество элементов на странице
+
+    // Вычисляем общее количество страниц
+    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
+
+    // Флаг, показывающий, есть ли следующая страница
+    const hasNextPage = computed(() => currentPage.value < totalPages.value);
+
+    // Метод для перехода на предыдущую страницу
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
+      }
+    };
+
+    // Метод для перехода на следующую страницу
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      }
+    };
+
+    // Функция, возвращающая отфильтрованный список подкастов для текущей страницы
+    const paginatedPodcasts = computed(() => {
+      const startIndex = (currentPage.value - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      return podcasts.slice(startIndex, endIndex);
+    });
 
     return {
-      podcasts: store.getters.PODCASTS,
+      paginatedPodcasts,
+      currentPage,
+      totalPages,
+      hasNextPage,
+      prevPage,
+      nextPage,
     };
   },
-  mounted() {
-
-  }
-}
+};
 </script>
 <template>
-    <div class="podcast-page">
-        <header>
-        <div class="nav-buttons">
-            <router-link to="/metrics">Метрики</router-link>
-            <router-link to="/podcasts">Список подкастов</router-link>
+  <div class="podcast-page">
+    <header>
+      <div class="nav-buttons">
+        <router-link to="/metrics">Метрики</router-link>
+        <router-link to="/podcasts">Список подкастов</router-link>
+      </div>
+      <button class="logout" @click="logout">Выйти</button>
+    </header>
+    <main>
+      <div class="list">
+        <h1>Список подкастов с жалобами</h1>
+        <table class="podcasts">
+          <thead>
+            <tr class="tr-list">
+              <th>Название</th>
+              <th>Жалобы</th>
+              <th>Длительность</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="tr-list" v-for="podcast in paginatedPodcasts" :key="podcast.id">
+              <td>
+                <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
+              </td>
+              <td>{{ podcast.complaintsCount }}</td>
+              <td>{{ podcast.duration }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
-        <button class="logout" @click="logout">Выйти</button>
-      </header>
-      <main>
-        <div class="list">
-          <h1>Список подкастов с жалобами</h1>
-            <table>
-              <thead>
-                <tr class="tr-list">
-                  <th>Название</th>
-                  <th>Жалобы</th>
-                  <th>Длительность</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="tr-list" v-for="podcast in podcasts" :key="podcast.id">
-                  <td>
-                  <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
-                  </td>
-                  <td>{{ podcast.complaintsCount }}</td>
-                  <td>{{ podcast.duration }}</td>
-                </tr>
-              </tbody>
-            </table>
-          <div class="pagination">
-            <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"><</button>
-            <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage">></button>
-          </div>
-        </div>
-      </main>
-      <footer>
-        <img src="../assets/logo.png" alt="Logo">
-      </footer>
-    </div>
+      </div>
+    </main>
+    <footer>
+      <img src="../assets/logo.png" alt="Logo">
+    </footer>
+  </div>
 </template>
 <style>
 .logout {
@@ -67,11 +103,19 @@ export default {
   border-radius: 16px;
   margin: 0 0 5px 0;
 }
+a {
+  margin-top: 0;
+}
 table {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   width: 100%;
+}
+.podcasts {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 536px;
 }
 thead {
   width: 100%;
@@ -79,6 +123,7 @@ thead {
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  margin: 7px 0 8px 0;
   /* justify-content: space-between; */
 }
 table {

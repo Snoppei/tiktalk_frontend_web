@@ -1,7 +1,7 @@
 <script>
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 
 export default {
   setup() {
@@ -16,19 +16,54 @@ export default {
     const remainingTime = ref('');
     const volume = ref(1.0);
     let intervalId = null;
-    const progressPercentage = ref(0); // Добавляем progressPercentage
+    const progressPercentage = ref(0); 
 
     const player = ref(null);
 
+    // Пагинация
+    let currentPage = ref(1); // Текущая страница
+    const pageSize = 7; // Количество жалоб на странице
+
     const selectComplaint = (complaint) => {
       selectedComplaint.value = complaint;
+    };
+
+    const filteredComplaints = ref([]);
+
+    const updateFilteredComplaints = () => {
+      const startIndex = (currentPage.value - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      filteredComplaints.value = podcast.value.complaints.slice(startIndex, endIndex);
+    };
+
+    // Вызываем функцию при изменении currentPage
+    watch(currentPage, () => {
+      updateFilteredComplaints();
+    });
+
+    const totalPages = computed(() => Math.ceil(podcast.value.complaints.length / pageSize));
+
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
+      } else {
+        currentPage.value = 1; // Обнуляем страницу, если текущая страница уже 1
+      }
+    };
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      } else {
+        currentPage.value = totalPages.value; // Устанавливаем текущую страницу на максимально возможную
+      }
     };
 
     const play = () => {
       if (!isPlaying.value && player.value) {
         player.value.play();
         isPlaying.value = true;
-        intervalId = setInterval(updateProgress, 100); // Update progress bar every 100ms
+        intervalId = setInterval(updateProgress, 100);
       }
     };
 
@@ -89,6 +124,7 @@ export default {
         volume.value = parseFloat(value);
       }
     };
+    
 
     onMounted(() => {
       if (player.value) {
@@ -96,6 +132,9 @@ export default {
           remainingTime.value = formatTime(player.value.duration);
         });
       }
+
+      // При монтировании компонента заполняем отфильтрованный список жалоб
+      updateFilteredComplaints();
     });
 
     return {
@@ -106,7 +145,7 @@ export default {
       remainingTime,
       volume,
       player,
-      progressPercentage, // Добавляем progressPercentage в возвращаемые значения
+      progressPercentage,
       selectComplaint,
       play,
       pause,
@@ -117,13 +156,17 @@ export default {
       onEnd,
       togglePlayPause,
       setVolume,
+      filteredComplaints,
+      currentPage,
+      pageSize,
+      totalPages,
+      prevPage,
+      nextPage
     };
   },
 };
+
 </script>
-
-
-
 
 
 <template>
@@ -148,17 +191,17 @@ export default {
                 <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
                 <div class="menu">
                     <div class="listOfComplaints">
-                        <table>
+                        <table class="compl-table">
                             <tbody>
-                            <tr v-for="complaint in podcast.complaints" :key="complaint.id" @click="selectComplaint(complaint)">
+                            <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)" style="cursor: pointer;">
                                 <td class="complaint-unit">{{ complaint.title }}</td>
                             </tr>
                             </tbody>
                         </table>
                         <div class="pagination">
-                            <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"><</button>
-                            <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage">></button>
-                        </div>
+                          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+                          <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value" style="cursor: pointer;">></button>
+                      </div>
                     </div>
                     <div class="complaint-details" v-if="selectedComplaint">
                         <p>{{ selectedComplaint.message }}</p>
@@ -203,6 +246,9 @@ export default {
   </template>
   
 <style>
+.compl-table {
+  height: 212px;
+}
 .podcast-desription {
   margin: 20px 0 10px 0;
 }
@@ -291,7 +337,6 @@ td {
   display: block;
   margin-top: 2px;
   margin-bottom: 2px;
-  border: 1px solid #0d0d0f;
   background-color: #1A1B22;
 }
 .pagination {
