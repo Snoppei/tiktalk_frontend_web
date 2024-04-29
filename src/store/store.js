@@ -6,7 +6,7 @@ export const podcastsStore = {
                 author: "Автор 1",
                 imageUrl: "../src/assets/podcastPic.png",
                 audioUrl: "../src/assets/sample-3s.mp3",
-                description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. ",
+                description: "Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. Описание подкаста 1. ",
                 complaints: [
                     { id: 1, title: 'Жалоба 1', message: 'Содержание жалобы 1' },
                     { id: 2, title: 'Жалоба 2', message: 'Содержание жалобы 2' },
@@ -28,7 +28,7 @@ export const podcastsStore = {
                 author: "Автор 2",
                 imageUrl: "../src/assets/podcastPic.png",
                 audioUrl: "../src/assets/sample-3s.mp3",
-                description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. ",
+                description: "Описание подкаста 2. Описание подкаста 2. Описание подкаста 2. Описание подкаста 2. Описание подкаста 2. Описание подкаста 2. Описание подкаста 2. Описание подкаста. Описание подкаста 2. ",
                 complaints: [
                     { id: 8, title: 'Жалоба 8', message: 'Содержание жалобы 8' },
                     { id: 9, title: 'Жалоба 9', message: 'Содержание жалобы 9' }
@@ -44,7 +44,7 @@ export const podcastsStore = {
                 author: "Автор 3",
                 imageUrl: "../src/assets/podcastPic.png",
                 audioUrl: "../src/assets/sample-3s.mp3",
-                description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. ",
+                description: "Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. Описание подкаста 3. ",
                 complaints: [
                     { id: 10, title: 'Жалоба 10', message: 'Содержание жалобы 10' },
                     { id: 11, title: 'Жалоба 11', message: 'Содержание жалобы 11' }
@@ -60,7 +60,7 @@ export const podcastsStore = {
                 author: "Автор 4",
                 imageUrl: "../src/assets/podcastPic.png",
                 audioUrl: "../src/assets/sample-3s.mp3",
-                description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. ",
+                description: "Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. Описание подкаста 4. ",
                 complaints: [
                     { id: 12, title: 'Жалоба 12', message: 'Содержание жалобы 12' },
                     { id: 13, title: 'Жалоба 13', message: 'Содержание жалобы 13' }
@@ -310,17 +310,49 @@ export const podcastsStore = {
                 },
                 duration: '0:03'
             }
-        ]
+        ],
+        history: []
     },
     mutations: {
-        //для изменения состояния хранилища
+        DELETE_PODCAST(state, podcastId) {
+            const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
+            if (index !== -1) {
+                state.history.push({
+                    id: state.podcasts[index].id,
+                    name: state.podcasts[index].name,
+                    decision: 'Подкаст удален',
+                    duration: '0:03'
+                });
+                state.podcasts.splice(index, 1);
+            }
+        },
+        REJECT_COMPLAINTS(state, podcastId) {
+            const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
+            if (index !== -1) {
+                state.history.push({
+                    id: state.podcasts[index].id,
+                    name: state.podcasts[index].name,
+                    decision: 'Жалобы отклонены',
+                    duration: '0:03'
+                });
+                state.podcasts.splice(index, 1);
+            }
+        }
     },
     actions: {
-
+        deletePodcast({ commit }, podcastId) {
+            commit('DELETE_PODCAST', podcastId);
+        },
+        rejectComplaints({ commit }, podcastId) {
+            commit('REJECT_COMPLAINTS', podcastId);
+        }
     },
     getters: {
         PODCASTS: state => {
             return state.podcasts;
+        },
+        HISTORY: state => {
+            return state.history;
         },
         getPodcastById: (state) => (id) => {
             return state.podcasts.find(podcast => podcast.id === id);
