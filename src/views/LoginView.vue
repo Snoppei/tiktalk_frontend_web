@@ -6,7 +6,6 @@ export default {
     const router = useRouter();
 
     const onSubmit = () => {
-      // Перенаправление на страницу /podcasts
       router.push('/podcasts');
     }
 
