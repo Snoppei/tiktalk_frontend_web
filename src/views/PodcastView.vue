@@ -1,105 +1,186 @@
 <script>
+import { useStore } from 'vuex';
+import { useRoute, useRouter } from 'vue-router';
+import { computed, ref, onMounted, watch } from 'vue';
+
 export default {
-  data() {
-    return {
-      podcast: {
-        imageUrl: "../src/assets/podcastPic.png",
-        audioUrl: "../src/assets/sample-3s.mp3",
-        title: "Загадки Вселенной",
-        author: "Космический Голос",
-        description: "Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. Описание подкаста. "
-      },
-      complaints: [
-        { id: 1, title: "Тема жалобы 1", message: "Содержание жалобы 1" },
-        { id: 2, title: "Слишком много научных терминов, сложно для понимания", message: "2" },
-        { id: 3, title: "Автор предвзят в своих выводах о жизни на Марсе", message: "3" },
-        { id: 4, title: "Плохое качество звука", message: "4" },
-        { id: 5, title: "Музыкальное оформление отвлекает", message: "5" } 
-      ],
-      currentPage: 1,
-      totalPages: 1,
-      selectedComplaint: null,
-      isPlaying: false,
-      currentTime: '00:00',
-      remainingTime: '',
-      volume: 1.0,
-      intervalId: null,
-      hasNextPage: true
+  setup() {
+    const store = useStore();
+    const route = useRoute();
+    const router = useRouter();
+    const podcastId = route.params.id;
+    const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
+
+    const selectedComplaint = ref(null);
+    const isPlaying = ref(false);
+    const currentTime = ref('00:00');
+    const remainingTime = ref('');
+    const volume = ref(1.0);
+    let intervalId = null;
+    const progressPercentage = ref(0); 
+
+    const player = ref(null);
+
+    let currentPage = ref(1);
+    const pageSize = 7;
+
+    const selectComplaint = (complaint) => {
+      selectedComplaint.value = complaint;
     };
-  },
-  methods: {
-    selectComplaint(complaint) {
-      this.selectedComplaint = complaint;
-    },
-    play() {
-      if (!this.isPlaying) {
-        this.player.play();
-        this.isPlaying = true;
-        this.intervalId = setInterval(this.updateProgress, 100); // Update progress bar every 100ms
-      }
-    },
-    pause() {
-      if (this.isPlaying) {
-        this.player.pause();
-        this.isPlaying = false;
-        clearInterval(this.intervalId);
-        this.intervalId = null;
-      }
-    },
-    updateProgress() {
-      const currentTime = Math.floor(this.player.currentTime);
-      const duration = Math.floor(this.player.duration);
-      this.currentTime = this.formatTime(currentTime);
-      if (this.isPlaying) {
-        this.remainingTime = this.formatTime(duration - currentTime);
+
+    const logout = () => {
+      router.push('/login');
+    };
+
+    const filteredComplaints = ref([]);
+
+    const updateFilteredComplaints = () => {
+      const startIndex = (currentPage.value - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      filteredComplaints.value = podcast.value.complaints.slice(startIndex, endIndex);
+    };
+
+    watch(currentPage, () => {
+      updateFilteredComplaints();
+    });
+
+    const totalPages = computed(() => Math.ceil(podcast.value.complaints.length / pageSize));
+
+    const prevPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value--;
       } else {
-        this.remainingTime = this.formatTime(duration);
+        currentPage.value = 1;
       }
-      const progress = (currentTime / duration) * 100;
-      this.progressPercentage = progress;
-    },
-    formatTime(seconds) {
+    };
+
+    const nextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value++;
+      } else {
+        currentPage.value = totalPages.value;
+      }
+    };
+
+    const play = () => {
+      if (!isPlaying.value && player.value) {
+        player.value.play();
+        isPlaying.value = true;
+        intervalId = setInterval(updateProgress, 100);
+      }
+    };
+
+    const pause = () => {
+      if (isPlaying.value && player.value) {
+        player.value.pause();
+        isPlaying.value = false;
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const updateProgress = () => {
+      const currentTimeVal = Math.floor(player.value.currentTime);
+      const duration = Math.floor(player.value.duration);
+      currentTime.value = formatTime(currentTimeVal);
+      if (isPlaying.value) {
+        remainingTime.value = formatTime(duration - currentTimeVal);
+      } else {
+        remainingTime.value = formatTime(duration);
+      }
+      const progress = (currentTimeVal / duration) * 100;
+      progressPercentage.value = progress;
+    };
+
+    const formatTime = (seconds) => {
       const minutes = Math.floor(seconds / 60);
       const remainingSeconds = Math.round(seconds % 60);
       return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
-    },
-    onPlay() {
-    },
-    onPause() {
-    },
-    onEnd() {
-      this.isPlaying = false;
-      clearInterval(this.intervalId);
-      this.intervalId = null;
-      this.currentTime = '00:00';
-      this.remainingTime = this.formatTime(this.player.duration); 
-      this.progressPercentage = 0;
-    },
-    togglePlayPause() {
-      if (this.isPlaying) {
-        this.pause();
+    };
+
+    const onPlay = () => {
+    };
+
+    const onPause = () => {
+    };
+
+    const onEnd = () => {
+      isPlaying.value = false;
+      clearInterval(intervalId);
+      intervalId = null;
+      currentTime.value = '00:00';
+      remainingTime.value = formatTime(player.value.duration);
+      progressPercentage.value = 0;
+    };
+
+    const togglePlayPause = () => {
+      if (isPlaying.value) {
+        pause();
       } else {
-        this.play();
+        play();
       }
-    },
-    setVolume(value) {
-      this.player.volume = parseFloat(value);
-      this.volume = parseFloat(value);
-    }
+    };
+
+    const setVolume = (value) => {
+      if (player.value) {
+        player.value.volume = parseFloat(value);
+        volume.value = parseFloat(value);
+      }
+    };
+    
+    const deletePodcast = () => {
+      store.commit('DELETE_PODCAST', podcast.value.id);
+      router.push('/podcasts');
+    };
+
+    const rejectComplaints = () => {
+      store.commit('REJECT_COMPLAINTS', podcast.value.id);
+      router.push('/podcasts');
+    };
+
+    onMounted(() => {
+      if (player.value) {
+        player.value.addEventListener('loadedmetadata', () => {
+          remainingTime.value = formatTime(player.value.duration);
+        });
+      }
+      updateFilteredComplaints();
+    });
+
+    return {
+      podcast,
+      selectedComplaint,
+      isPlaying,
+      currentTime,
+      remainingTime,
+      volume,
+      player,
+      progressPercentage,
+      selectComplaint,
+      play,
+      pause,
+      updateProgress,
+      formatTime,
+      onPlay,
+      onPause,
+      onEnd,
+      togglePlayPause,
+      setVolume,
+      filteredComplaints,
+      currentPage,
+      pageSize,
+      totalPages,
+      prevPage,
+      nextPage,
+      deletePodcast,
+      rejectComplaints,
+      logout
+    };
   },
-  computed: {
-  playPauseClass() {
-    return this.isPlaying ? 'pause' : 'play';
-  }
-},
-  mounted() {
-    this.player = this.$refs.player;
-    this.player.addEventListener('loadedmetadata', () => {
-    this.remainingTime = this.formatTime(this.player.duration);
-  });
-  }
 };
 </script>
+
+
 
 <template>
     <div id="podcast-complaints">
@@ -107,6 +188,7 @@ export default {
         <div class="nav-buttons">
             <router-link to="/metrics">Метрики</router-link>
             <router-link to="/podcasts">Список подкастов</router-link>
+            <router-link to="/history">История</router-link>
         </div>
         <button class="logout" @click="logout">Выйти</button>
       </header>
@@ -115,25 +197,25 @@ export default {
         <div class="complaints-section">
             <div class="podcast-preview">
                 <img :src="podcast.imageUrl" alt="Podcast Image" />
-                <h2>{{ podcast.title }}</h2>
+                <h2>{{ podcast.name }}</h2>
                 <p class="author">Автор: {{ podcast.author }}</p>
             </div>
     
             <div class="complaints">
-                <h3>Количество жалоб: {{ complaints.length }}</h3>
+                <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
                 <div class="menu">
                     <div class="listOfComplaints">
-                        <table>
+                        <table class="compl-table">
                             <tbody>
-                            <tr v-for="complaint in complaints" :key="complaint.id" @click="selectComplaint(complaint)">
+                            <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)" style="cursor: pointer;">
                                 <td class="complaint-unit">{{ complaint.title }}</td>
                             </tr>
                             </tbody>
                         </table>
                         <div class="pagination">
-                            <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"><</button>
-                            <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage">></button>
-                        </div>
+                          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+                          <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value" style="cursor: pointer;">></button>
+                      </div>
                     </div>
                     <div class="complaint-details" v-if="selectedComplaint">
                         <p>{{ selectedComplaint.message }}</p>
@@ -167,8 +249,8 @@ export default {
           </div>
         </div>
         <div class="podcast-actions">
-          <button class="delete">Удалить подкаст</button>
-          <button class="approve">Отклонить жалобы</button>
+          <button class="delete" @click="deletePodcast" style="cursor: pointer;">Удалить подкаст</button>
+          <button class="approve" @click="rejectComplaints" style="cursor: pointer;">Отклонить жалобы</button>
         </div> 
       </main>
       <footer class="footer-podcast">
@@ -178,6 +260,9 @@ export default {
   </template>
   
 <style>
+.compl-table {
+  height: 212px;
+}
 .podcast-desription {
   margin: 20px 0 10px 0;
 }
@@ -266,7 +351,6 @@ td {
   display: block;
   margin-top: 2px;
   margin-bottom: 2px;
-  border: 1px solid #0d0d0f;
   background-color: #1A1B22;
 }
 .pagination {

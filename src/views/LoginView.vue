@@ -1,14 +1,17 @@
 <script>
+import { useRouter } from 'vue-router';
+
 export default {
-  data () {
-    return {
-      login: '',
-      password: ''
+  setup () {
+    const router = useRouter();
+
+    const onSubmit = () => {
+      // Перенаправление на страницу /podcasts
+      router.push('/podcasts');
     }
-  },
-  methods: {
-    onSubmit () {
-      // обработка кнопки войти
+
+    return {
+      onSubmit
     }
   }
 }

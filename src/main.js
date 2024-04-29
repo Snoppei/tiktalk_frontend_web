@@ -1,11 +1,21 @@
 import './assets/main.css'
 
 import { createApp } from 'vue'
+import { createStore } from 'vuex'
+import { podcastsStore } from './store/store.js'
 import App from './App.vue'
 import router from './router'
 
-const app = createApp(App)
+const app = createApp(App);
 
-app.use(router)
+const store = createStore({
+    state: podcastsStore.state,
+    mutations: podcastsStore.mutations,
+    actions: podcastsStore.actions,
+    getters: podcastsStore.getters
+});
 
-app.mount('#app')
+app.use(router);
+app.use(store);
+
+app.mount('#app');
