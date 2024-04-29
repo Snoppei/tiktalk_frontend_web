@@ -1,18 +1,20 @@
 <script>
-// export default {
-//   data () {
-//     return {
-//       login: '',
-//       password: ''
-//     }
-//   },
-//   methods: {
-//     onSubmit () {
-//       // обработка кнопки войти
-//     }
-//   }
-// }
+import { useRouter } from 'vue-router';
 
+export default {
+  setup () {
+    const router = useRouter();
+
+    const onSubmit = () => {
+      // Перенаправление на страницу /podcasts
+      router.push('/podcasts');
+    }
+
+    return {
+      onSubmit
+    }
+  }
+}
 </script>
 
 <template>
