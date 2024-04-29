@@ -22,11 +22,11 @@ const router = createRouter({
             name: 'Podcast',
             component: PodcastView
         },
-        // {
-        //   path: '/history',
-        //   name: 'History',
-        //   component: HistoryView
-        // }
+        {
+          path: '/history',
+          name: 'History',
+          component: HistoryView
+        }
     ]
 })
 
