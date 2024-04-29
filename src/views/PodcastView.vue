@@ -1,28 +1,130 @@
 <script>
 import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+import { computed, ref, onMounted } from 'vue';
 
 export default {
   setup() {
     const store = useStore();
-    let podcast = null;
+    const route = useRoute();
+    const podcastId = route.params.id;
+    const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
+
+    const selectedComplaint = ref(null);
+    const isPlaying = ref(false);
+    const currentTime = ref('00:00');
+    const remainingTime = ref('');
+    const volume = ref(1.0);
+    let intervalId = null;
+    const progressPercentage = ref(0); // Добавляем progressPercentage
+
+    const player = ref(null);
+
+    const selectComplaint = (complaint) => {
+      selectedComplaint.value = complaint;
+    };
+
+    const play = () => {
+      if (!isPlaying.value && player.value) {
+        player.value.play();
+        isPlaying.value = true;
+        intervalId = setInterval(updateProgress, 100); // Update progress bar every 100ms
+      }
+    };
+
+    const pause = () => {
+      if (isPlaying.value && player.value) {
+        player.value.pause();
+        isPlaying.value = false;
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const updateProgress = () => {
+      const currentTimeVal = Math.floor(player.value.currentTime);
+      const duration = Math.floor(player.value.duration);
+      currentTime.value = formatTime(currentTimeVal);
+      if (isPlaying.value) {
+        remainingTime.value = formatTime(duration - currentTimeVal);
+      } else {
+        remainingTime.value = formatTime(duration);
+      }
+      const progress = (currentTimeVal / duration) * 100;
+      progressPercentage.value = progress;
+    };
+
+    const formatTime = (seconds) => {
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = Math.round(seconds % 60);
+      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    };
+
+    const onPlay = () => {
+    };
+
+    const onPause = () => {
+    };
+
+    const onEnd = () => {
+      isPlaying.value = false;
+      clearInterval(intervalId);
+      intervalId = null;
+      currentTime.value = '00:00';
+      remainingTime.value = formatTime(player.value.duration);
+      progressPercentage.value = 0;
+    };
+
+    const togglePlayPause = () => {
+      if (isPlaying.value) {
+        pause();
+      } else {
+        play();
+      }
+    };
+
+    const setVolume = (value) => {
+      if (player.value) {
+        player.value.volume = parseFloat(value);
+        volume.value = parseFloat(value);
+      }
+    };
+
+    onMounted(() => {
+      if (player.value) {
+        player.value.addEventListener('loadedmetadata', () => {
+          remainingTime.value = formatTime(player.value.duration);
+        });
+      }
+    });
 
     return {
       podcast,
+      selectedComplaint,
+      isPlaying,
+      currentTime,
+      remainingTime,
+      volume,
+      player,
+      progressPercentage, // Добавляем progressPercentage в возвращаемые значения
+      selectComplaint,
+      play,
+      pause,
+      updateProgress,
+      formatTime,
+      onPlay,
+      onPause,
+      onEnd,
+      togglePlayPause,
+      setVolume,
     };
   },
-  mounted() {
-    const podcastId = this.$route.params.id;
-    const podcasts = this.$store.state.podcasts;
-    const foundPodcast = podcasts.find(podcast => podcast.id === parseInt(podcastId));
-
-    if (foundPodcast) {
-      this.podcast = foundPodcast;
-    } else {
-      console.error('Подкаст с таким идентификатором не найден');
-    }
-  }
 };
 </script>
+
+
+
+
 
 <template>
     <div id="podcast-complaints">
@@ -48,8 +150,8 @@ export default {
                     <div class="listOfComplaints">
                         <table>
                             <tbody>
-                            <tr v-for="complaint in podcast.complaints" :key="podcast.complaint.id" @click="selectComplaint(complaint)">
-                                <td class="complaint-unit">{{ podcast.complaint.title }}</td>
+                            <tr v-for="complaint in podcast.complaints" :key="complaint.id" @click="selectComplaint(complaint)">
+                                <td class="complaint-unit">{{ complaint.title }}</td>
                             </tr>
                             </tbody>
                         </table>
