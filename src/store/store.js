@@ -15,6 +15,7 @@ export const podcastsStore = {
                     { id: 5, title: 'Жалоба 5', message: 'Содержание жалобы 5' },
                     { id: 6, title: 'Жалоба 6', message: 'Содержание жалобы 6' },
                     { id: 7, title: 'Жалоба 7', message: 'Содержание жалобы 7' },
+                    { id: 44, title: 'Жалоба 44', message: 'Содержание жалобы 44' },
                 ],
                 get complaintsCount() {
                     return this.complaints.length;
