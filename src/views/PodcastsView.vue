@@ -17,6 +17,7 @@ export default {
     const hasNextPage = computed(() => currentPage.value < totalPages.value);
 
     const logout = () => {
+      localStorage.setItem('isAuthenticated', false);
       router.push('/login');
     };
 
@@ -58,7 +59,7 @@ export default {
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
-      <button class="logout" @click="logout">Выйти</button>
+      <button class="logout" @click="logout" style="cursor: pointer;">Выйти</button>
     </header>
     <main>
       <div class="list">
@@ -83,7 +84,8 @@ export default {
         </table>
         <div class="pagination">
           <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
+              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
+                style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
@@ -105,46 +107,56 @@ export default {
   border-radius: 16px;
   margin: 0 0 5px 0;
 }
+
 a {
   margin-top: 0;
 }
+
 table {
   display: flex;
   flex-direction: column;
   width: 100%;
 }
+
 .podcasts {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 536px;
 }
+
 thead {
   width: 100%;
 }
+
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin: 7px 0 8px 0;
   /* justify-content: space-between; */
 }
+
 table {
   background-color: rgba(26, 27, 34, 0.7);
 }
+
 td {
   text-align: center;
 }
+
 footer {
   display: flex;
   flex-direction: row;
   justify-content: center;
   margin: 10px 0;
 }
+
 .pagination {
   display: flex;
   flex-direction: row;
   gap: 5px;
 }
+
 .list {
   display: flex;
   flex-direction: column;
@@ -154,22 +166,26 @@ footer {
   width: 1280px;
 
 }
+
 .podcast-page {
-    width: 1280px;
-    height: 100%;
+  width: 1280px;
+  height: 100%;
 }
+
 header {
   margin: 10px 0;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
+
 .nav-buttons {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   width: 450px;
 }
+
 .pagination-button {
   display: block;
   width: 60px;
@@ -182,6 +198,7 @@ header {
   border-radius: 0px;
   margin: 0 0;
 }
+
 main {
   background: rgba(26, 27, 34, 0.7);
 }
