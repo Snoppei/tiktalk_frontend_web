@@ -22,6 +22,7 @@ export default {
     };
 
     const logout = () => {
+      localStorage.setItem('isAuthenticated', false);
       router.push('/login');
     };
 
@@ -57,7 +58,7 @@ export default {
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
-      <button class="logout" @click="logout">Выйти</button>
+      <button class="logout" @click="logout" style="cursor: pointer;">Выйти</button>
     </header>
     <main>
       <div class="list">
@@ -66,13 +67,15 @@ export default {
           <thead>
             <tr class="tr-list">
               <th>Название</th>
-              <th>Решение</th>
+              <th>Действие</th>
               <th>Длительность</th>
             </tr>
           </thead>
           <tbody>
             <tr class="tr-list" v-for="podcast in paginatedPodcasts" :key="podcast.id">
-              <td>{{ podcast.name }}</td>
+              <td>
+                <router-link :to="`/history/${podcast.id}`">{{ podcast.name }}</router-link>
+              </td>
               <td>{{ podcast.decision }}</td>
               <td>{{ podcast.duration }}</td>
             </tr>
@@ -80,7 +83,8 @@ export default {
         </table>
         <div class="pagination">
           <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
+              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
+                style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
@@ -102,32 +106,39 @@ export default {
   border-radius: 16px;
   margin: 0 0 5px 0;
 }
+
 table {
   display: flex;
   flex-direction: column;
   width: 100%;
 }
+
 thead {
   width: 100%;
 }
+
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   /* justify-content: space-between; */
 }
+
 td {
   text-align: center;
 }
+
 footer {
   display: flex;
   flex-direction: row;
   justify-content: center;
 }
+
 .pagination {
   display: flex;
   flex-direction: row;
   gap: 5px;
 }
+
 .list {
   display: flex;
   flex-direction: column;
@@ -137,16 +148,19 @@ footer {
   width: 1280px;
 
 }
+
 .podcast-page {
-    margin: 10px 0;
-    width: 1280px;
-    height: 100%;
+  margin: 10px 0;
+  width: 1280px;
+  height: 100%;
 }
+
 header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
+
 .pagination-button {
   display: block;
   width: 60px;
@@ -159,6 +173,7 @@ header {
   border-radius: 0px;
   margin: 0 0;
 }
+
 main {
   background: rgba(26, 27, 34, 0.7);
 }
