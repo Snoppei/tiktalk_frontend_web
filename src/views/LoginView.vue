@@ -1,41 +1,43 @@
 <script>
+import { useRouter } from 'vue-router';
+
 export default {
-  data () {
-    return {
-      login: '',
-      password: ''
+  setup() {
+    const router = useRouter();
+
+    const onSubmit = () => {
+      router.push('/podcasts');
     }
-  },
-  methods: {
-    onSubmit () {
-      // обработка кнопки войти
+    localStorage.setItem('isAuthenticated', true);
+
+    return {
+      onSubmit
     }
   }
 }
 </script>
 
 <template>
-    <div class="login-page">
-      <div class="logo">
-        <img src="../assets/logo.png" alt="Logo">
-      </div>
-      <div class="form-container">
-        <h1>Авторизация</h1>
-        <form @submit="onSubmit">
-            <div>
-              <p>Логин</p>
-              <input type="text" v-model="login" placeholder="">
-            </div>
-            <div>
-              <p>Пароль</p>
-              <input type="password" v-model="password" placeholder="">
-            </div>
-            <button type="submit">Войти</button>
-        </form>
-      </div>
+  <div class="login-page">
+    <div class="logo">
+      <img src="../assets/logo.png" alt="Logo">
     </div>
-  </template>
-  
+    <div class="form-container">
+      <h1>Авторизация</h1>
+      <form @submit="onSubmit">
+        <div>
+          <p>Логин</p>
+          <input class="fields" type="text" v-model="login" placeholder="">
+        </div>
+        <div>
+          <p>Пароль</p>
+          <input class="fields" type="text" v-model="password" placeholder="">
+        </div>
+        <button class="auth" type="submit" style="cursor: pointer;">Войти</button>
+      </form>
+    </div>
+  </div>
+</template>
 <style>
 form {
   display: flex;
@@ -44,31 +46,31 @@ form {
 }
 
 .login-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
 }
-  
+
 .logo {
   margin-bottom: 40px;
 }
-  
+
 .form-container {
   width: 450px;
   padding: 20px;
   justify-content: center;
   align-items: center;
 }
-  
+
 h1 {
   text-align: center;
   font-size: 32px;
   margin-bottom: 40px;
 }
-  
-input {
+
+.fields {
   width: 436px;
   height: 53px;
   padding: 10px;
@@ -76,8 +78,8 @@ input {
   border: 1px solid #ccc;
   border-radius: 8px;
 }
-  
-button {
+
+.auth {
   display: block;
   width: 50%;
   height: 64px;
@@ -89,7 +91,7 @@ button {
   border-radius: 16px;
   margin: 0 auto;
 }
-  
+
 a {
   text-align: center;
   display: block;
