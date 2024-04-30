@@ -104,7 +104,9 @@ export default {
     });
 
     onMounted(() => {
-      if (player.value) {
+      if (!podcast.value) {
+        router.push('/history');
+      } else if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
         });

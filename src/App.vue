@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
+import LoginView from './views/LoginView.vue';
 
 const router = useRouter();
 
@@ -16,10 +17,14 @@ if (isAuthenticated && redirectPath && router.currentRoute.value.path === '/logi
   localStorage.setItem('redirectPath', router.currentRoute.value.fullPath);
   router.replace('/login');
 }
+// } else if (router.currentRoute.value.path === '/') {
+//   router.replace('/login');
+// }
 </script>
 
 <template>
   <RouterView />
+  <LoginView/>
 </template>
 
 <style scoped>
