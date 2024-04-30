@@ -89,16 +89,6 @@ export default {
       }
     };
 
-    // const deletePodcast = () => {
-    //   store.commit('DELETE_PODCAST', podcast.value.id);
-    //   router.push('/podcasts');
-    // };
-
-    // const rejectComplaints = () => {
-    //   store.commit('REJECT_COMPLAINTS', podcast.value.id);
-    //   router.push('/podcasts');
-    // };
-
     onMounted(() => {
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
