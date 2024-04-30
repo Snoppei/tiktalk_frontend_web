@@ -1,6 +1,4 @@
-# tiktalk_frontend_web
-
-This template should help get you started developing with Vue 3 in Vite.
+# 9.1 tiktalk_frontend_web
 
 ## Recommended IDE Setup
 
@@ -26,10 +24,4 @@ npm run dev
 
 ```sh
 npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
 ```
