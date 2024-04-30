@@ -9,9 +9,7 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const podcastId = route.params.id;
-    const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
-    const solution = ref('')
-    const selectedComplaint = ref(null);
+    const podcast = computed(() => store.getters.getHistoryPodcastById(parseInt(podcastId)));
     const isPlaying = ref(false);
     const currentTime = ref('00:00');
     const remainingTime = ref('');
@@ -21,48 +19,10 @@ export default {
 
     const player = ref(null);
 
-    let currentPage = ref(1);
-    const pageSize = 7;
-
-    const selectComplaint = (complaint) => {
-      selectedComplaint.value = complaint;
-    };
-
     const logout = () => {
       localStorage.setItem('isAuthenticated', false);
       router.push('/login');
     };
-
-    const filteredComplaints = ref([]);
-
-    const updateFilteredComplaints = () => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      filteredComplaints.value = podcast.value.complaints.slice(startIndex, endIndex);
-    };
-
-    watch(currentPage, () => {
-      updateFilteredComplaints();
-    });
-
-    const totalPages = computed(() => Math.ceil(podcast.value.complaints.length / pageSize));
-
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
-      } else {
-        currentPage.value = 1;
-      }
-    };
-
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
-      } else {
-        currentPage.value = totalPages.value;
-      }
-    };
-
     const play = () => {
       if (!isPlaying.value && player.value) {
         player.value.play();
@@ -129,39 +89,22 @@ export default {
       }
     };
 
-    const deletePodcast = () => {
-      const podcastId = podcast.value.id;
-      const solutionValue = solution.value; // Получаем решение из введенного текста
-      store.commit('DELETE_PODCAST', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
-      router.push('/podcasts');
-    };
-
-    const rejectComplaints = () => {
-      const podcastId = podcast.value.id;
-      const solutionValue = solution.value; // Получаем решение из введенного текста
-      store.commit('REJECT_COMPLAINTS', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
-      router.push('/podcasts');
-    };
     onMounted(() => {
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
         });
       }
-      updateFilteredComplaints();
     });
 
     return {
-      solution,
       podcast,
-      selectedComplaint,
       isPlaying,
       currentTime,
       remainingTime,
       volume,
       player,
       progressPercentage,
-      selectComplaint,
       play,
       pause,
       updateProgress,
@@ -171,14 +114,6 @@ export default {
       onEnd,
       togglePlayPause,
       setVolume,
-      filteredComplaints,
-      currentPage,
-      pageSize,
-      totalPages,
-      prevPage,
-      nextPage,
-      deletePodcast,
-      rejectComplaints,
       logout
     };
   },
@@ -207,27 +142,9 @@ export default {
         </div>
 
         <div class="complaints">
-          <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
-          <div class="menu">
-            <div class="listOfComplaints">
-              <table class="compl-table">
-                <tbody>
-                  <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)"
-                    style="cursor: pointer;">
-                    <td class="complaint-unit">{{ complaint.title }}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="pagination">
-                <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"
-                  style="cursor: pointer;"><</button>
-                    <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
-                      style="cursor: pointer;">></button>
-              </div>
-            </div>
-            <div class="complaint-details" v-if="selectedComplaint">
-              <p>{{ selectedComplaint.message }}</p>
-            </div>
+          <h3>Причина решения</h3>
+          <div class="solution">
+            <p> {{ podcast.solution }}</p>
           </div>
         </div>
       </div>
@@ -256,14 +173,6 @@ export default {
           </div>
         </div>
       </div>
-      <div class="text-input-section">
-        <div v-if="!solution" class="error-message">Введите решение перед удалением подкаста или отклонением жалоб.</div>
-        <textarea v-model="solution" placeholder="Введите ваше решение" rows="4" cols="40"></textarea>
-      </div>
-      <div class="podcast-actions">
-        <button class="delete" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution">Удалить подкаст</button>
-        <button class="approve" @click="rejectComplaints" style="cursor: pointer;" :disabled="!solution">Отклонить жалобы</button>
-      </div>
     </main>
     <footer class="footer-podcast">
       <img src="../assets/logo.png" alt="Logo">
@@ -271,75 +180,56 @@ export default {
   </div>
 </template>
 <style>
-.text-input-section {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
+.solution {
+  padding: 5px 5px 5px 5px;
+  margin: 5px 5px 5px 5px;
+  height: 80%;
   background-color: rgba(26, 27, 34, 0.7);
-  margin: 0 0 10px 0;
-}
-textarea {
-  resize: none;
-  cursor: text;
 }
 a {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 .compl-table {
   height: 212px;
 }
-
 .podcast-desription {
   margin: 20px 0 10px 0;
 }
-
 .listOfComplaints {
   background-color: rgba(26, 27, 34, 0.7);
 }
-
 .wrapper {
   width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: center;
 }
-
 td {
   padding: 0;
 }
-
 .complaint-details {
   padding: 0 5px 5px 5px;
   height: 100%;
   background-color: rgba(26, 27, 34, 0.7);
 }
-
 .complaint-details p {
   padding-top: 2px;
 }
-
 .podcast-preview {
   width: 100%;
   height: auto;
 }
-
 .current-time {
   color: #000000;
 }
-
 .remaining-time {
   color: #000000;
 }
-
 .slash {
   color: #000000;
 }
-
 .podcast-actions {
   display: flex;
   flex-direction: row;
@@ -347,21 +237,17 @@ td {
   gap: 40px;
   width: 100%;
 }
-
 .complaints h3 {
   margin-left: 5px;
 }
-
 .complaints {
   background-color: #25252C;
   width: 100%;
   height: 100%;
 }
-
-.complaints-unit {
+.complaints-unit{
   display: block;
 }
-
 .delete {
   display: block;
   width: 300px;
@@ -374,7 +260,6 @@ td {
   border-radius: 16px;
   margin: 0 0;
 }
-
 .approve {
   display: block;
   width: 300px;
@@ -387,21 +272,18 @@ td {
   border-radius: 16px;
   margin: 0 0;
 }
-
 .menu {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 5px;
   padding: 5px;
 }
-
 .complaint-unit {
   display: block;
   margin-top: 2px;
   margin-bottom: 2px;
   background-color: #1A1B22;
 }
-
 .pagination {
   display: flex;
   flex-direction: row;
@@ -409,12 +291,10 @@ td {
   gap: 5px;
   margin: 5px 0 5px 0;
 }
-
 .complaints-section {
   display: grid;
   grid-template-columns: 1fr 3fr;
 }
-
 .logout {
   display: block;
   width: 196px;
@@ -427,13 +307,11 @@ td {
   border-radius: 16px;
   margin: 0 0 5px 0;
 }
-
 header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
-
 .podcast-player {
   border: 1px solid #EFF1F2;
   background-color: #EFF1F2;
@@ -509,7 +387,6 @@ header {
 .player-time span {
   font-size: 14px;
 }
-
 .footer-podcast {
   margin: 80px 0 80px 0;
 }

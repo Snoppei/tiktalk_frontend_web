@@ -3,6 +3,7 @@ import LoginView from '../views/LoginView.vue'
 import PodcastsView from '../views/PodcastsView.vue'
 import PodcastView from '../views/PodcastView.vue'
 import HistoryView from '../views/HistoryView.vue'
+import HistoryPodcastView from '../views/HistoryPodcastView.vue'
 
 const router = createRouter({
     history: createWebHistory(
@@ -26,6 +27,11 @@ const router = createRouter({
           path: '/history',
           name: 'History',
           component: HistoryView
+        },
+        {
+            path: '/history/:id',
+            name: 'HistoryPodcast',
+            component: HistoryPodcastView
         }
     ]
 })
