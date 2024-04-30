@@ -10,14 +10,14 @@ export default {
     const router = useRouter();
     const podcastId = route.params.id;
     const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
-
+    const solution = ref('')
     const selectedComplaint = ref(null);
     const isPlaying = ref(false);
     const currentTime = ref('00:00');
     const remainingTime = ref('');
     const volume = ref(1.0);
     let intervalId = null;
-    const progressPercentage = ref(0); 
+    const progressPercentage = ref(0);
 
     const player = ref(null);
 
@@ -29,6 +29,7 @@ export default {
     };
 
     const logout = () => {
+      localStorage.setItem('isAuthenticated', false);
       router.push('/login');
     };
 
@@ -127,17 +128,20 @@ export default {
         volume.value = parseFloat(value);
       }
     };
-    
+
     const deletePodcast = () => {
-      store.commit('DELETE_PODCAST', podcast.value.id);
+      const podcastId = podcast.value.id;
+      const solutionValue = solution.value; // Получаем решение из введенного текста
+      store.commit('DELETE_PODCAST', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
       router.push('/podcasts');
     };
 
     const rejectComplaints = () => {
-      store.commit('REJECT_COMPLAINTS', podcast.value.id);
+      const podcastId = podcast.value.id;
+      const solutionValue = solution.value; // Получаем решение из введенного текста
+      store.commit('REJECT_COMPLAINTS', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
       router.push('/podcasts');
     };
-
     onMounted(() => {
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
@@ -148,6 +152,7 @@ export default {
     });
 
     return {
+      solution,
       podcast,
       selectedComplaint,
       isPlaying,
@@ -183,122 +188,158 @@ export default {
 
 
 <template>
-    <div id="podcast-complaints">
-      <header>
-        <div class="nav-buttons">
-            <router-link to="/metrics">Метрики</router-link>
-            <router-link to="/podcasts">Список подкастов</router-link>
-            <router-link to="/history">История</router-link>
+  <div id="podcast-complaints">
+    <header>
+      <div class="nav-buttons">
+        <router-link to="/metrics">Метрики</router-link>
+        <router-link to="/podcasts">Список подкастов</router-link>
+        <router-link to="/history">История</router-link>
+      </div>
+      <button class="logout" @click="logout" style="cursor: pointer;">Выйти</button>
+    </header>
+
+    <main>
+      <div class="complaints-section">
+        <div class="podcast-preview">
+          <img :src="podcast.imageUrl" alt="Podcast Image" />
+          <h2>{{ podcast.name }}</h2>
+          <p class="author">Автор: {{ podcast.author }}</p>
         </div>
-        <button class="logout" @click="logout">Выйти</button>
-      </header>
-  
-      <main>
-        <div class="complaints-section">
-            <div class="podcast-preview">
-                <img :src="podcast.imageUrl" alt="Podcast Image" />
-                <h2>{{ podcast.name }}</h2>
-                <p class="author">Автор: {{ podcast.author }}</p>
+
+        <div class="complaints">
+          <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
+          <div class="menu">
+            <div class="listOfComplaints">
+              <table class="compl-table">
+                <tbody>
+                  <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)"
+                    style="cursor: pointer;">
+                    <td class="complaint-unit">{{ complaint.title }}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div class="pagination">
+                <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"
+                  style="cursor: pointer;"><</button>
+                    <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
+                      style="cursor: pointer;">></button>
+              </div>
             </div>
-    
-            <div class="complaints">
-                <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
-                <div class="menu">
-                    <div class="listOfComplaints">
-                        <table class="compl-table">
-                            <tbody>
-                            <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)" style="cursor: pointer;">
-                                <td class="complaint-unit">{{ complaint.title }}</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        <div class="pagination">
-                          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-                          <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value" style="cursor: pointer;">></button>
-                      </div>
-                    </div>
-                    <div class="complaint-details" v-if="selectedComplaint">
-                        <p>{{ selectedComplaint.message }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="podcast-desription">
-          <p class="description">{{ podcast.description }}</p>
-        </div>
-        <div class="wrapper">
-          <div class="podcast-player">
-            <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
-              <source :src="podcast.audioUrl" type="audio/mpeg">
-              </source>
-            </audio>
-            <div class="player-controls">
-              <button @click="togglePlayPause" :class="playPauseClass"></button>
-              <div class="player-time">
-                <span class="current-time">{{ currentTime }}</span>
-                <p class="slash"> / </p>
-                <span class="remaining-time">{{ remainingTime }}</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
-              </div>
-              <div class="volume-control">
-                <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)"/>
-              </div>
+            <div class="complaint-details" v-if="selectedComplaint">
+              <p>{{ selectedComplaint.message }}</p>
             </div>
           </div>
         </div>
-        <div class="podcast-actions">
-          <button class="delete" @click="deletePodcast" style="cursor: pointer;">Удалить подкаст</button>
-          <button class="approve" @click="rejectComplaints" style="cursor: pointer;">Отклонить жалобы</button>
-        </div> 
-      </main>
-      <footer class="footer-podcast">
-        <img src="../assets/logo.png" alt="Logo">
-      </footer>
-    </div>
-  </template>
-  
+      </div>
+      <div class="podcast-desription">
+        <p class="description">{{ podcast.description }}</p>
+      </div>
+      <div class="wrapper">
+        <div class="podcast-player">
+          <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
+            <source :src="podcast.audioUrl" type="audio/mpeg">
+            </source>
+          </audio>
+          <div class="player-controls">
+            <button @click="togglePlayPause" :class="playPauseClass"></button>
+            <div class="player-time">
+              <span class="current-time">{{ currentTime }}</span>
+              <p class="slash"> / </p>
+              <span class="remaining-time">{{ remainingTime }}</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
+            </div>
+            <div class="volume-control">
+              <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-input-section">
+        <div v-if="!solution" class="error-message">Введите решение перед удалением подкаста или отклонением жалоб.</div>
+        <textarea v-model="solution" placeholder="Введите ваше решение" rows="4" cols="40"></textarea>
+      </div>
+      <div class="podcast-actions">
+        <button class="delete" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution">Удалить подкаст</button>
+        <button class="approve" @click="rejectComplaints" style="cursor: pointer;" :disabled="!solution">Отклонить жалобы</button>
+      </div>
+    </main>
+    <footer class="footer-podcast">
+      <img src="../assets/logo.png" alt="Logo">
+    </footer>
+  </div>
+</template>
 <style>
+.text-input-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  background-color: rgba(26, 27, 34, 0.7);
+  margin: 0 0 10px 0;
+}
+textarea {
+  resize: none;
+  cursor: text;
+}
+a {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .compl-table {
   height: 212px;
 }
+
 .podcast-desription {
   margin: 20px 0 10px 0;
 }
+
 .listOfComplaints {
   background-color: rgba(26, 27, 34, 0.7);
 }
+
 .wrapper {
   width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: center;
 }
+
 td {
   padding: 0;
 }
+
 .complaint-details {
   padding: 0 5px 5px 5px;
   height: 100%;
   background-color: rgba(26, 27, 34, 0.7);
 }
+
 .complaint-details p {
   padding-top: 2px;
 }
+
 .podcast-preview {
   width: 100%;
   height: auto;
 }
+
 .current-time {
   color: #000000;
 }
+
 .remaining-time {
   color: #000000;
 }
+
 .slash {
   color: #000000;
 }
+
 .podcast-actions {
   display: flex;
   flex-direction: row;
@@ -306,17 +347,21 @@ td {
   gap: 40px;
   width: 100%;
 }
+
 .complaints h3 {
   margin-left: 5px;
 }
+
 .complaints {
   background-color: #25252C;
   width: 100%;
   height: 100%;
 }
-.complaints-unit{
+
+.complaints-unit {
   display: block;
 }
+
 .delete {
   display: block;
   width: 300px;
@@ -329,6 +374,7 @@ td {
   border-radius: 16px;
   margin: 0 0;
 }
+
 .approve {
   display: block;
   width: 300px;
@@ -341,18 +387,21 @@ td {
   border-radius: 16px;
   margin: 0 0;
 }
+
 .menu {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 5px;
   padding: 5px;
 }
+
 .complaint-unit {
   display: block;
   margin-top: 2px;
   margin-bottom: 2px;
   background-color: #1A1B22;
 }
+
 .pagination {
   display: flex;
   flex-direction: row;
@@ -360,10 +409,12 @@ td {
   gap: 5px;
   margin: 5px 0 5px 0;
 }
+
 .complaints-section {
   display: grid;
   grid-template-columns: 1fr 3fr;
 }
+
 .logout {
   display: block;
   width: 196px;
@@ -376,11 +427,13 @@ td {
   border-radius: 16px;
   margin: 0 0 5px 0;
 }
+
 header {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
 }
+
 .podcast-player {
   border: 1px solid #EFF1F2;
   background-color: #EFF1F2;
@@ -456,6 +509,7 @@ header {
 .player-time span {
   font-size: 14px;
 }
+
 .footer-podcast {
   margin: 80px 0 80px 0;
 }
