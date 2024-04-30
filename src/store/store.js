@@ -313,38 +313,50 @@ export const podcastsStore = {
         ],
         history: []
     },
-    mutations: {
-        DELETE_PODCAST(state, podcastId) {
-            const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
-            if (index !== -1) {
-                state.history.push({
-                    id: state.podcasts[index].id,
-                    name: state.podcasts[index].name,
-                    decision: 'Подкаст удален',
-                    duration: '0:03'
-                });
-                state.podcasts.splice(index, 1);
-            }
-        },
-        REJECT_COMPLAINTS(state, podcastId) {
-            const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
-            if (index !== -1) {
-                state.history.push({
-                    id: state.podcasts[index].id,
-                    name: state.podcasts[index].name,
-                    decision: 'Жалобы отклонены',
-                    duration: '0:03'
-                });
-                state.podcasts.splice(index, 1);
-            }
-        }
-    },
+mutations: {
+  DELETE_PODCAST(state, payload) {
+    const { podcastId, solution } = payload;
+    const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
+    if (index !== -1) {
+      state.history.push({
+        id: state.podcasts[index].id,
+        name: state.podcasts[index].name,
+        imageUrl: state.podcasts[index].imageUrl,
+        audioUrl: state.podcasts[index].audioUrl,
+        author: state.podcasts[index].author,
+        description: state.podcasts[index].description,
+        decision: "Подкаст удален",
+        solution: solution,
+        duration: state.podcasts[index].duration
+      });
+      state.podcasts.splice(index, 1);
+    }
+  },
+  REJECT_COMPLAINTS(state, payload) {
+    const { podcastId, solution } = payload;
+    const index = state.podcasts.findIndex(podcast => podcast.id === podcastId);
+    if (index !== -1) {
+      state.history.push({
+        id: state.podcasts[index].id,
+        name: state.podcasts[index].name,
+        imageUrl: state.podcasts[index].imageUrl,
+        audioUrl: state.podcasts[index].audioUrl,
+        author: state.podcasts[index].author,
+        description: state.podcasts[index].description,
+        decision: "Жалобы отклонены",
+        solution: solution,
+        duration: state.podcasts[index].duration
+      });
+      state.podcasts.splice(index, 1);
+    }
+  }
+},
     actions: {
-        deletePodcast({ commit }, podcastId) {
-            commit('DELETE_PODCAST', podcastId);
+        deletePodcast({ commit }, payload) {
+            commit('DELETE_PODCAST', payload);
         },
-        rejectComplaints({ commit }, podcastId) {
-            commit('REJECT_COMPLAINTS', podcastId);
+        rejectComplaints({ commit }, payload) {
+            commit('REJECT_COMPLAINTS', payload);
         }
     },
     getters: {
@@ -356,6 +368,9 @@ export const podcastsStore = {
         },
         getPodcastById: (state) => (id) => {
             return state.podcasts.find(podcast => podcast.id === id);
+        },
+        getHistoryPodcastById: (state) => (id) => {
+            return state.history.find(podcast => podcast.id === id);
         },
     },
 };
