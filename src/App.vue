@@ -16,6 +16,9 @@ if (isAuthenticated && redirectPath && router.currentRoute.value.path === '/logi
   localStorage.setItem('redirectPath', router.currentRoute.value.fullPath);
   router.replace('/login');
 }
+if (router.currentRoute.value.path === '/') {
+  router.replace('/login');
+}
 </script>
 
 <template>
