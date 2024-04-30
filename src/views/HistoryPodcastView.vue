@@ -41,16 +41,18 @@ export default {
     };
 
     const updateProgress = () => {
-      const currentTimeVal = Math.floor(player.value.currentTime);
-      const duration = Math.floor(player.value.duration);
-      currentTime.value = formatTime(currentTimeVal);
-      if (isPlaying.value) {
-        remainingTime.value = formatTime(duration - currentTimeVal);
-      } else {
-        remainingTime.value = formatTime(duration);
+      if (player.value) {
+        const currentTimeVal = Math.floor(player.value.currentTime);
+        const duration = Math.floor(player.value.duration);
+        currentTime.value = formatTime(currentTimeVal);
+        if (isPlaying.value) {
+          remainingTime.value = formatTime(duration - currentTimeVal);
+        } else {
+          remainingTime.value = formatTime(duration);
+        }
+        const progress = (currentTimeVal / duration) * 100;
+        progressPercentage.value = progress;
       }
-      const progress = (currentTimeVal / duration) * 100;
-      progressPercentage.value = progress;
     };
 
     const formatTime = (seconds) => {
@@ -66,12 +68,13 @@ export default {
     };
 
     const onEnd = () => {
-      isPlaying.value = false;
       clearInterval(intervalId);
       intervalId = null;
-      currentTime.value = '00:00';
-      remainingTime.value = formatTime(player.value.duration);
-      progressPercentage.value = 0;
+      isPlaying.value = false;
+      if (player.value.currentTime !== player.value.duration) {
+        player.value.currentTime = player.value.duration;
+        updateProgress();
+      }
     };
 
     const togglePlayPause = () => {
@@ -89,6 +92,17 @@ export default {
       }
     };
 
+    const seekTo = (percentage) => {
+      const duration = player.value.duration;
+      const newTime = duration * (percentage / 100);
+      player.value.currentTime = newTime;
+      updateProgress();
+    };
+
+    const playPauseClass = computed(() => {
+      return isPlaying.value ? 'pause' : 'play';
+    });
+
     onMounted(() => {
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
@@ -98,6 +112,8 @@ export default {
     });
 
     return {
+      playPauseClass,
+      seekTo,
       podcast,
       isPlaying,
       currentTime,
@@ -164,8 +180,8 @@ export default {
               <p class="slash"> / </p>
               <span class="remaining-time">{{ remainingTime }}</span>
             </div>
-            <div class="progress-bar">
-              <div class="progress" :style="{ width: progressPercentage + '%' }"></div>
+            <div class="seek-bar">
+              <input type="range" :value="progressPercentage" min="0" max="100" step="0.1" @input="seekTo($event.target.value)">
             </div>
             <div class="volume-control">
               <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)" />
@@ -389,5 +405,26 @@ header {
 }
 .footer-podcast {
   margin: 80px 0 80px 0;
+}
+.seek-bar input[type="range"] {
+  width: 300px;
+}
+
+.seek-bar input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #000;
+  cursor: pointer;
+}
+
+.seek-bar input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #000;
+  cursor: pointer;
 }
 </style>
