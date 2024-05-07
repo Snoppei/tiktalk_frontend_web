@@ -21,7 +21,7 @@ export default {
 
     const logout = () => {
       localStorage.setItem('isAuthenticated', false);
-      router.push('/login');
+      router.push('/');
     };
     const play = () => {
       if (!isPlaying.value && player.value) {
