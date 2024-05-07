@@ -135,8 +135,8 @@ export default {
 
     const deletePodcast = () => {
       const podcastId = podcast.value.id;
-      const solutionValue = solution.value; // Получаем решение из введенного текста
-      store.commit('DELETE_PODCAST', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
+      const solutionValue = solution.value;
+      store.commit('DELETE_PODCAST', { podcastId, solution: solutionValue });
       router.push('/podcasts');
     };
 
@@ -153,8 +153,8 @@ export default {
 
     const rejectComplaints = () => {
       const podcastId = podcast.value.id;
-      const solutionValue = solution.value; // Получаем решение из введенного текста
-      store.commit('REJECT_COMPLAINTS', { podcastId, solution: solutionValue }); // Передаем идентификатор подкаста и решение в мутатор
+      const solutionValue = solution.value;
+      store.commit('REJECT_COMPLAINTS', { podcastId, solution: solutionValue });
       router.push('/podcasts');
     };
     onMounted(() => {
