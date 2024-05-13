@@ -204,6 +204,9 @@ export default {
   height: 80%;
   background-color: rgba(26, 27, 34, 0.7);
 }
+.slash {
+  color: #FFFFFF;
+}
 a {
   display: flex;
   justify-content: center;
@@ -243,9 +246,6 @@ td {
   color: #000000;
 }
 .remaining-time {
-  color: #000000;
-}
-.slash {
   color: #000000;
 }
 .podcast-actions {
@@ -330,7 +330,7 @@ header {
   flex-direction: row;
   justify-content: space-between;
 }
-.podcast-player {
+/*.podcast-player {
   border: 1px solid #EFF1F2;
   background-color: #EFF1F2;
   border-radius: 15px;
@@ -339,7 +339,7 @@ header {
   width: 60%;
   padding: 10px;
   margin: 20px 0 20px 0;
-}
+} */
 
 .player-controls {
   display: flex;
@@ -360,15 +360,15 @@ header {
 
 .player-controls button.play {
   background-image: url('../assets/play.png');
-  width: 15px;
-  height: 17px;
+  width: 31px;
+  height: 31px;
   padding: 5px;
 }
 
 .player-controls button.pause {
   background-image: url('../assets/pause.png');
-  width: 15px;
-  height: 16px;
+  width: 31px;
+  height: 31px;
   padding: 5px;
 }
 
@@ -404,9 +404,14 @@ header {
 
 .player-time span {
   font-size: 14px;
+  color: #FFFFFF;
 }
 .footer-podcast {
   margin: 80px 0 80px 0;
+}
+.seek-bar {
+  display: flex;
+  align-items: center;
 }
 .seek-bar input[type="range"] {
   width: 300px;
@@ -418,7 +423,7 @@ header {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #000;
+  background-color: #25252C;
   cursor: pointer;
 }
 
@@ -426,7 +431,7 @@ header {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #000;
+  background-color: #25252C;
   cursor: pointer;
 }
 </style>

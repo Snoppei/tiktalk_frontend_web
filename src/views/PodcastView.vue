@@ -274,12 +274,14 @@ export default {
         </div>
       </div>
       <div class="text-input-section">
-        <div v-if="!solution" class="error-message">Введите решение перед удалением подкаста или отклонением жалоб.</div>
         <textarea v-model="solution" placeholder="Введите ваше решение" rows="4" cols="40"></textarea>
+        <!-- <div v-if="!solution" class="error-message">Введите решение перед удалением подкаста или отклонением жалоб.</div> -->
       </div>
       <div class="podcast-actions">
-        <button class="delete" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution">Удалить подкаст</button>
-        <button class="approve" @click="rejectComplaints" style="cursor: pointer;" :disabled="!solution">Отклонить жалобы</button>
+        <button class="delete" v-if="solution" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution"><p>Удалить подкаст</p></button>
+        <button class="approve" v-if="solution" @click="rejectComplaints" style="cursor: pointer;" :disabled="!solution"><p>Отклонить жалобы</p></button>
+        <button class="delete-disabled" v-if="!solution" @click="deletePodcast" :disabled="solution"><p>Удалить подкаст</p></button>
+        <button class="approve-disabled" v-if="!solution" @click="rejectComplaints" :disabled="solution"><p>Отклонить жалобы</p></button>
       </div>
     </main>
     <footer class="footer-podcast">
@@ -288,6 +290,9 @@ export default {
   </div>
 </template>
 <style>
+.error-message {
+  color: #FF453A;
+}
 .text-input-section {
   display: flex;
   flex-direction: column;
@@ -353,8 +358,10 @@ td {
   color: #000000;
 }
 
-.slash {
-  color: #000000;
+button p {
+  display: block;
+  height: 100%;
+  widows: 100%;
 }
 
 .podcast-actions {
@@ -392,6 +399,8 @@ td {
   margin: 0 0;
 }
 
+
+
 .approve {
   display: block;
   width: 300px;
@@ -401,6 +410,32 @@ td {
   background-color: #3067DE;
   color: #fff;
   border: 1px solid #3067DE;
+  border-radius: 16px;
+  margin: 0 0;
+}
+
+.delete-disabled {
+  display: block;
+  width: 300px;
+  height: 64px;
+  font-size: 30px;
+  padding: 10px;
+  background-color: #25252C;
+  color: #757575;
+  border: 1px solid #25252C;
+  border-radius: 16px;
+  margin: 0 0;
+}
+
+.approve-disabled {
+  display: block;
+  width: 300px;
+  height: 64px;
+  font-size: 30px;
+  padding: 10px;
+  background-color: #25252C;
+  color: #757575;
+  border: 1px solid #25252C;
   border-radius: 16px;
   margin: 0 0;
 }
@@ -452,12 +487,12 @@ header {
 }
 
 .podcast-player {
-  border: 1px solid #EFF1F2;
-  background-color: #EFF1F2;
+  border: 1px solid #25252C;
+  background-color: none;
   border-radius: 15px;
   display: flex;
   flex-direction: column;
-  width: 60%;
+  width: 600px;
   padding: 10px;
   margin: 20px 0 20px 0;
 }
@@ -481,15 +516,15 @@ header {
 
 .player-controls button.play {
   background-image: url('../assets/play.png');
-  width: 15px;
-  height: 17px;
+  width: 31px;
+  height: 31px;
   padding: 5px;
 }
 
 .player-controls button.pause {
   background-image: url('../assets/pause.png');
-  width: 15px;
-  height: 16px;
+  width: 31px;
+  height: 31px;
   padding: 5px;
 }
 
