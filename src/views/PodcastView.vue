@@ -237,7 +237,7 @@ export default {
               </table>
               <div class="pagination">
                 <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"
-                  style="cursor: pointer;"><</button>
+                  style="cursor: pointer;">&lt</button>
                     <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
                       style="cursor: pointer;">></button>
               </div>
@@ -255,7 +255,6 @@ export default {
         <div class="podcast-player">
           <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
             <source :src="podcast.audioUrl" type="audio/mpeg">
-            </source>
           </audio>
           <div class="player-controls">
             <button @click="togglePlayPause" :class="playPauseClass"></button>

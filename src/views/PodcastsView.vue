@@ -1,18 +1,17 @@
 <script>
-import { useStore } from 'vuex';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getPodcasts } from '../api';
 
 export default {
   setup() {
-    const store = useStore();
-    const podcasts = store.getters.PODCASTS;
+    const podcasts = ref([]);
     const router = useRouter();
 
     const currentPage = ref(1);
-    const pageSize = 15;
+    const pageSize = 10; // Изменим размер страницы на 10, чтобы соответствовать API
 
-    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
+    const totalPages = computed(() => Math.ceil(podcasts.value.length / pageSize));
 
     const hasNextPage = computed(() => currentPage.value < totalPages.value);
 
@@ -36,7 +35,20 @@ export default {
     const paginatedPodcasts = computed(() => {
       const startIndex = (currentPage.value - 1) * pageSize;
       const endIndex = startIndex + pageSize;
-      return podcasts.slice(startIndex, endIndex);
+      return podcasts.value.slice(startIndex, endIndex);
+    });
+
+    const fetchPodcasts = async () => {
+      try {
+        const response = await getPodcasts(currentPage.value - 1, pageSize);
+        podcasts.value = response.data;
+      } catch (error) {
+        console.error('Ошибка при загрузке подкастов', error);
+      }
+    };
+
+    onMounted(() => {
+      fetchPodcasts();
     });
 
     return {
@@ -51,6 +63,7 @@ export default {
   },
 };
 </script>
+
 <template>
   <div class="podcast-page">
     <header>
@@ -77,15 +90,14 @@ export default {
               <td>
                 <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
-              <td>{{ podcast.complaintsCount }}</td>
-              <td>{{ podcast.duration }}</td>
+              <td>{{ podcast.reportsCount }}</td>
+              <!--<td>{{ podcast.duration }}</td>  Обратите внимание, что в API-ответе нет поля duration -->
             </tr>
           </tbody>
         </table>
         <div class="pagination">
-          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
-                style="cursor: pointer;">></button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;">&lt</button>
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
