@@ -2,7 +2,7 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createStore } from 'vuex'
-import { podcastsStore } from './store/store.js'
+import { podcastsStore } from './model/store/store.js'
 import App from './App.vue'
 import router from './router'
 

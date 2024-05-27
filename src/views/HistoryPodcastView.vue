@@ -330,16 +330,6 @@ header {
   flex-direction: row;
   justify-content: space-between;
 }
-/*.podcast-player {
-  border: 1px solid #EFF1F2;
-  background-color: #EFF1F2;
-  border-radius: 15px;
-  display: flex;
-  flex-direction: column;
-  width: 60%;
-  padding: 10px;
-  margin: 20px 0 20px 0;
-} */
 
 .player-controls {
   display: flex;

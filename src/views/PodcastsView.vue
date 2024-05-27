@@ -1,7 +1,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getPodcasts } from '../api';
+import { getPodcasts } from '../model/api';
 
 export default {
   setup() {
@@ -9,7 +9,7 @@ export default {
     const router = useRouter();
 
     const currentPage = ref(1);
-    const pageSize = 10; // Изменим размер страницы на 10, чтобы соответствовать API
+    const pageSize = 10; // колво подкастов с жалобами на одной странцие
 
     const totalPages = computed(() => Math.ceil(podcasts.value.length / pageSize));
 
