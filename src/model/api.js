@@ -36,10 +36,14 @@ export const rejectReports = (podcastId, verdict) => {
   return apiClient.post(`/podcast/reject/podcast/${podcastId}`, verdict);
 };
 
-// export const getAlbums = (page = 0, size = 10, sortParam = 'REPORTS_COUNT_DESC') => {
-//   return apiClient.get('/album/', {
-//     params: { page, size, sortParam }
-//   });
-// };
+export const getHistoryPodcasts = (page = 0, size = 10, sortParam = '') => {
+  return apiClient.get('//' , {
+    params: {}
+  });
+};
+
+export const getHistoryPodcastById = (podcastId) => {
+  return apiClient.get(`//`);
+};
 
 // http://localhost:8089/tiktalk/api/album/?page=0&size=10&sortParam=ID_ASC

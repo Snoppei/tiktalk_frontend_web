@@ -35,11 +35,11 @@ export default {
         const audioUrl = `${response.data.audioUrl}`; 
 
         try {
-          const imageResponse = await getFileByPodcastId(imageUrl.slice(20));
+          const imageResponse = await getFileByPodcastId(imageUrl);
           imageSrc.value = URL.createObjectURL(imageResponse.data);
           console.log(imageUrl.slice(20));
           console.log(imageUrl);
-          const audioResponse = await getFileByPodcastId(audioUrl.slice(20));
+          const audioResponse = await getFileByPodcastId(audioUrl);
           audioSrc.value = URL.createObjectURL(audioResponse.data);
         } catch (error) {
           console.error('Ошибка загрузки файлов с Minio:', error);
@@ -54,7 +54,7 @@ export default {
 
     const fetchReports = async (currentPage) => {
       try {
-        const response = await getReportsByPodcastId(podcastId, 0, pageSize, 'ID_DESC')
+        const response = await getReportsByPodcastId(podcastId, currentPage, pageSize, 'ID_DESC')
         filteredComplaints.value = response.data;
         console.log('Reports:', filteredComplaints.value);
       } catch (error) {
@@ -64,7 +64,7 @@ export default {
 
     const updateFilteredComplaints = () => {
       if (podcast.value) {
-        fetchReports();
+        fetchReports(currentPage.value);
       }
     };
 
@@ -92,12 +92,15 @@ export default {
     });
 
     const totalPages = computed(() => {
-      return podcast.value ? Math.ceil(podcast.value.reports.length / pageSize) : 0;
+      return podcast.value ? Math.ceil(podcast.value.reports.length / pageSize)-1 : 0;
     });
 
     const prevPage = () => {
       if (currentPage.value > 0) {
+        console.log('Before: ', currentPage.value);
         currentPage.value--;
+        console.log('After: ', currentPage.value);
+        // fetchReports(currentPage.value);
       } else {
         currentPage.value = 0;
       }
@@ -105,7 +108,9 @@ export default {
 
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
+        console.log('Before: ', currentPage.value);
         currentPage.value++;
+        console.log('After: ', currentPage.value);
       } else {
         currentPage.value = totalPages.value;
       }

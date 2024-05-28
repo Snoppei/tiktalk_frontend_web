@@ -1,65 +1,41 @@
 <script>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { getPodcasts } from '../model/api';
+import { mapState, mapActions } from 'vuex';
 
 export default {
-  setup() {
-    const podcasts = ref([]);
-    const router = useRouter();
-
-    const currentPage = ref(1);
-    const pageSize = 10; // колво подкастов с жалобами на одной странцие
-
-    const totalPages = computed(() => Math.ceil(podcasts.value.length / pageSize));
-
-    const hasNextPage = computed(() => currentPage.value < totalPages.value);
-
-    const logout = () => {
+  computed: {
+    ...mapState('podcasts', ['podcasts', 'currentPage', 'pageSize']),
+    totalPages() {
+      return this.podcasts? Math.ceil(this.podcasts.length / this.pageSize) : 1;
+    },
+    hasNextPage() {
+      return this.currentPage < this.totalPages;
+    },
+    paginatedPodcasts() {
+    if (!this.podcasts) return [];
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.podcasts.slice(startIndex, endIndex);
+  },
+  },
+  methods: {
+    ...mapActions('podcasts', ['fetchPodcasts', 'setCurrentPage']),
+    logout() {
       localStorage.setItem('isAuthenticated', false);
-      router.push('/');
-    };
-
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
+      this.$router.push('/');
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.setCurrentPage(this.currentPage - 1);
       }
-    };
-
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
+    },
+    nextPage() {
+      if (this.hasNextPage) {
+        this.setCurrentPage(this.currentPage + 1);
       }
-    };
-
-    const paginatedPodcasts = computed(() => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      return podcasts.value.slice(startIndex, endIndex);
-    });
-
-    const fetchPodcasts = async () => {
-      try {
-        const response = await getPodcasts(currentPage.value - 1, pageSize);
-        podcasts.value = response.data;
-      } catch (error) {
-        console.error('Ошибка при загрузке подкастов', error);
-      }
-    };
-
-    onMounted(() => {
-      fetchPodcasts();
-    });
-
-    return {
-      paginatedPodcasts,
-      currentPage,
-      totalPages,
-      hasNextPage,
-      prevPage,
-      nextPage,
-      logout
-    };
+    },
+  },
+  mounted() {
+    this.fetchPodcasts(); 
   },
 };
 </script>
@@ -82,7 +58,7 @@ export default {
             <tr class="tr-list">
               <th>Название</th>
               <th>Жалобы</th>
-              <th>Длительность</th>
+              <!-- <th>Длительность</th> --> 
             </tr>
           </thead>
           <tbody>
@@ -91,12 +67,13 @@ export default {
                 <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
               <td>{{ podcast.reportsCount }}</td>
-              <!--<td>{{ podcast.duration }}</td>  Обратите внимание, что в API-ответе нет поля duration -->
+              <!-- <td>{{ podcast.duration }}</td> --> 
             </tr>
           </tbody>
         </table>
         <div class="pagination">
-          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;">&lt</button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+          <!-- <span class="page-info">{{ currentPage }} / {{ totalPages }}</span> -->
           <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
       </div>
@@ -145,7 +122,6 @@ thead {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin: 7px 0 8px 0;
-  /* justify-content: space-between; */
 }
 
 table {
