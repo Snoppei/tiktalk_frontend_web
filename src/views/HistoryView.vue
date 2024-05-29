@@ -23,7 +23,7 @@ export default {
 
     const logout = () => {
       localStorage.setItem('isAuthenticated', false);
-      router.push('/login');
+      router.push('/');
     };
 
     const nextPage = () => {
@@ -82,7 +82,7 @@ export default {
           </tbody>
         </table>
         <div class="pagination">
-          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;">&lt</button>
               <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
                 style="cursor: pointer;">></button>
         </div>
@@ -120,7 +120,6 @@ thead {
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  /* justify-content: space-between; */
 }
 
 td {
