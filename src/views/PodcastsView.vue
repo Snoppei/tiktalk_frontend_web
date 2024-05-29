@@ -1,56 +1,45 @@
 <script>
-import { useStore } from 'vuex';
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { mapState, mapActions } from 'vuex';
 
 export default {
-  setup() {
-    const store = useStore();
-    const podcasts = store.getters.PODCASTS;
-    const router = useRouter();
-
-    const currentPage = ref(1);
-    const pageSize = 15;
-
-    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
-
-    const hasNextPage = computed(() => currentPage.value < totalPages.value);
-
-    const logout = () => {
+  computed: {
+    ...mapState('podcasts', ['podcasts', 'currentPage', 'pageSize']),
+    totalPages() {
+      return this.podcasts? Math.ceil(this.podcasts.length / this.pageSize) : 1;
+    },
+    hasNextPage() {
+      return this.currentPage < this.totalPages;
+    },
+    paginatedPodcasts() {
+    if (!this.podcasts) return [];
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    return this.podcasts.slice(startIndex, endIndex);
+  },
+  },
+  methods: {
+    ...mapActions('podcasts', ['fetchPodcasts', 'setCurrentPage']),
+    logout() {
       localStorage.setItem('isAuthenticated', false);
-      router.push('/');
-    };
-
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
+      this.$router.push('/');
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.setCurrentPage(this.currentPage - 1);
       }
-    };
-
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
+    },
+    nextPage() {
+      if (this.hasNextPage) {
+        this.setCurrentPage(this.currentPage + 1);
       }
-    };
-
-    const paginatedPodcasts = computed(() => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      return podcasts.slice(startIndex, endIndex);
-    });
-
-    return {
-      paginatedPodcasts,
-      currentPage,
-      totalPages,
-      hasNextPage,
-      prevPage,
-      nextPage,
-      logout
-    };
+    },
+  },
+  mounted() {
+    this.fetchPodcasts(); 
   },
 };
 </script>
+
 <template>
   <div class="podcast-page">
     <header>
@@ -69,7 +58,7 @@ export default {
             <tr class="tr-list">
               <th>Название</th>
               <th>Жалобы</th>
-              <th>Длительность</th>
+              <!-- <th>Длительность</th> --> 
             </tr>
           </thead>
           <tbody>
@@ -77,15 +66,15 @@ export default {
               <td>
                 <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
-              <td>{{ podcast.complaintsCount }}</td>
-              <td>{{ podcast.duration }}</td>
+              <td>{{ podcast.reportsCount }}</td>
+              <!-- <td>{{ podcast.duration }}</td> --> 
             </tr>
           </tbody>
         </table>
         <div class="pagination">
           <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
-                style="cursor: pointer;">></button>
+          <!-- <span class="page-info">{{ currentPage }} / {{ totalPages }}</span> -->
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
@@ -133,7 +122,6 @@ thead {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin: 7px 0 8px 0;
-  /* justify-content: space-between; */
 }
 
 table {

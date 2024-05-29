@@ -1,16 +1,17 @@
 <script>
-import { useStore } from 'vuex';
+import { getPodcastById, getPersonById, getReportsByPodcastId, banPodcast, rejectReports } from '../model/api';
 import { useRoute, useRouter } from 'vue-router';
-import { computed, ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { getFileByPodcastId } from '../model/minioapi';
 
 export default {
   setup() {
-    const store = useStore();
     const route = useRoute();
     const router = useRouter();
     const podcastId = route.params.id;
-    const podcast = computed(() => store.getters.getPodcastById(parseInt(podcastId)));
-    const solution = ref('')
+    const podcast = ref(null);
+    const author = ref(null);
+    const solution = ref('');
     const selectedComplaint = ref(null);
     const isPlaying = ref(false);
     const currentTime = ref('00:00');
@@ -18,11 +19,64 @@ export default {
     const volume = ref(1.0);
     let intervalId = null;
     const progressPercentage = ref(0);
-
     const player = ref(null);
-
-    let currentPage = ref(1);
+    let currentPage = ref(0);
     const pageSize = 7;
+    const filteredComplaints = ref([]);
+    const imageSrc = ref(null);
+    const audioSrc = ref(null); 
+
+    const fetchPodcast = async () => {
+      try {
+        const response = await getPodcastById(podcastId);
+        podcast.value = response.data;
+
+        const imageUrl = `${response.data.imageUrl}`; 
+        const audioUrl = `${response.data.audioUrl}`; 
+
+        try {
+          const imageResponse = await getFileByPodcastId(imageUrl);
+          imageSrc.value = URL.createObjectURL(imageResponse.data);
+          console.log(imageUrl.slice(20));
+          console.log(imageUrl);
+          const audioResponse = await getFileByPodcastId(audioUrl);
+          audioSrc.value = URL.createObjectURL(audioResponse.data);
+        } catch (error) {
+          console.error('Ошибка загрузки файлов с Minio:', error);
+        }
+
+        updateFilteredComplaints();
+        fetchAuthor(podcast.value.personId);
+      } catch (error) {
+        console.error('Ошибка получения подкаста:', error);
+      }
+    };
+
+    const fetchReports = async (currentPage) => {
+      try {
+        const response = await getReportsByPodcastId(podcastId, currentPage, pageSize, 'ID_DESC')
+        filteredComplaints.value = response.data;
+        console.log('Reports:', filteredComplaints.value);
+      } catch (error) {
+        console.log('Error fetching reports:', error);
+      }
+    }
+
+    const updateFilteredComplaints = () => {
+      if (podcast.value) {
+        fetchReports(currentPage.value);
+      }
+    };
+
+    const fetchAuthor = async (personId) => {
+      try {
+        const response = await getPersonById(personId);
+        author.value = response.data;
+        console.log('Author:', author.value);
+      } catch (error) {
+        console.error('Error fetching author:', error);
+      }
+    };
 
     const selectComplaint = (complaint) => {
       selectedComplaint.value = complaint;
@@ -33,31 +87,30 @@ export default {
       router.push('/');
     };
 
-    const filteredComplaints = ref([]);
-
-    const updateFilteredComplaints = () => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      filteredComplaints.value = podcast.value.complaints.slice(startIndex, endIndex);
-    };
-
     watch(currentPage, () => {
       updateFilteredComplaints();
     });
 
-    const totalPages = computed(() => Math.ceil(podcast.value.complaints.length / pageSize));
+    const totalPages = computed(() => {
+      return podcast.value ? Math.ceil(podcast.value.reports.length / pageSize)-1 : 0;
+    });
 
     const prevPage = () => {
-      if (currentPage.value > 1) {
+      if (currentPage.value > 0) {
+        console.log('Before: ', currentPage.value);
         currentPage.value--;
+        console.log('After: ', currentPage.value);
+        // fetchReports(currentPage.value);
       } else {
-        currentPage.value = 1;
+        currentPage.value = 0;
       }
     };
 
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
+        console.log('Before: ', currentPage.value);
         currentPage.value++;
+        console.log('After: ', currentPage.value);
       } else {
         currentPage.value = totalPages.value;
       }
@@ -117,7 +170,6 @@ export default {
       }
     };
 
-
     const togglePlayPause = () => {
       if (isPlaying.value) {
         pause();
@@ -133,13 +185,6 @@ export default {
       }
     };
 
-    const deletePodcast = () => {
-      const podcastId = podcast.value.id;
-      const solutionValue = solution.value;
-      store.commit('DELETE_PODCAST', { podcastId, solution: solutionValue });
-      router.push('/podcasts');
-    };
-
     const seekTo = (percentage) => {
       const duration = player.value.duration;
       const newTime = duration * (percentage / 100);
@@ -151,26 +196,42 @@ export default {
       return isPlaying.value ? 'pause' : 'play';
     });
 
-    const rejectComplaints = () => {
-      const podcastId = podcast.value.id;
-      const solutionValue = solution.value;
-      store.commit('REJECT_COMPLAINTS', { podcastId, solution: solutionValue });
-      router.push('/podcasts');
+    const rejectComplaints = async () => {
+      try {
+        const response = await rejectReports(podcastId, solution.value);
+        console.log(response);
+      } catch (error) {
+        console.error('Error rejecting complaints:', error);
+      }
     };
+
+    const deletePodcast = async () => {
+      try {
+        const response = await banPodcast(podcastId, solution.value);
+        console.log(response);
+      } catch (error) {
+        console.error('Error banning podcast:', error);
+      }
+    };
+
     onMounted(() => {
+      fetchPodcast();
+      fetchReports();
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
         });
       }
-      updateFilteredComplaints();
     });
 
     return {
       playPauseClass,
       seekTo,
       solution,
+      imageSrc,
+      audioSrc,
       podcast,
+      author,
       selectedComplaint,
       isPlaying,
       currentTime,
@@ -196,14 +257,11 @@ export default {
       nextPage,
       deletePodcast,
       rejectComplaints,
-      logout
+      logout,
     };
   },
 };
 </script>
-
-
-
 <template>
   <div id="podcast-complaints">
     <header>
@@ -216,46 +274,45 @@ export default {
     </header>
 
     <main>
-      <div class="complaints-section">
+      <div class="complaints-section" v-if="podcast">
         <div class="podcast-preview">
-          <img :src="podcast.imageUrl" alt="Podcast Image" />
+          <img class="podcast-image":src="imageSrc" alt="Podcast Image" />
           <h2>{{ podcast.name }}</h2>
-          <p class="author">Автор: {{ podcast.author }}</p>
+          <p class="author">Автор: {{ author ? author.name : 'Загрузка...' }}</p>
         </div>
 
         <div class="complaints">
-          <h3>Количество жалоб: {{ podcast.complaintsCount }}</h3>
+          <h3>Количество жалоб: {{ podcast.reportsCount }}</h3>
           <div class="menu">
             <div class="listOfComplaints">
               <table class="compl-table">
                 <tbody>
                   <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)"
                     style="cursor: pointer;">
-                    <td class="complaint-unit">{{ complaint.title }}</td>
+                    <td class="complaint-unit">{{ complaint.theme }}</td>
                   </tr>
                 </tbody>
               </table>
               <div class="pagination">
-                <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1"
-                  style="cursor: pointer;"><</button>
+                <button class="pagination-button" @click="prevPage" :disabled="currentPage === 0"
+                  style="cursor: pointer;">&lt</button>
                     <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
                       style="cursor: pointer;">></button>
               </div>
             </div>
             <div class="complaint-details" v-if="selectedComplaint">
-              <p>{{ selectedComplaint.message }}</p>
+              <p>{{ selectedComplaint.description }}</p>
             </div>
           </div>
         </div>
       </div>
-      <div class="podcast-desription">
+      <div class="podcast-desription" v-if="podcast">
         <p class="description">{{ podcast.description }}</p>
       </div>
-      <div class="wrapper">
+      <div class="wrapper" v-if="podcast">
         <div class="podcast-player">
-          <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
-            <source :src="podcast.audioUrl" type="audio/mpeg">
-            </source>
+          <audio ref="player" :src="audioSrc" @play="onPlay" @pause="onPause" @ended="onEnd">
+            <source :src="audioSrc" type="audio/mpeg">
           </audio>
           <div class="player-controls">
             <button @click="togglePlayPause" :class="playPauseClass"></button>
@@ -275,7 +332,6 @@ export default {
       </div>
       <div class="text-input-section">
         <textarea v-model="solution" placeholder="Введите ваше решение" rows="4" cols="40"></textarea>
-        <!-- <div v-if="!solution" class="error-message">Введите решение перед удалением подкаста или отклонением жалоб.</div> -->
       </div>
       <div class="podcast-actions">
         <button class="delete" v-if="solution" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution"><p>Удалить подкаст</p></button>
@@ -290,6 +346,12 @@ export default {
   </div>
 </template>
 <style>
+.podcast-image {
+  max-width: 100%;
+  max-height: 300px;
+  width: auto;
+  height: auto;
+}
 .error-message {
   color: #FF453A;
 }
@@ -448,6 +510,7 @@ button p {
 }
 
 .complaint-unit {
+  text-align: unset;
   display: block;
   margin-top: 2px;
   margin-bottom: 2px;
