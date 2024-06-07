@@ -1,11 +1,23 @@
 import axios from 'axios';
 
+function getAccessToken() {
+  return localStorage.getItem('access_token');
+}
+
 const apiClient = axios.create({
   baseURL: 'http://localhost:8089/tiktalk/api',
   headers: {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
   },
+});
+
+apiClient.interceptors.request.use(config => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const getPodcasts = (page = 0, size = 10, sortParam = 'REPORTS_COUNT_DESC') => {
