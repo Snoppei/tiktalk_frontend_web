@@ -86,7 +86,7 @@ export default {
             <tr class="tr-list">
               <th>Название</th>
               <th>Жалобы</th>
-              <!-- <th>Длительность</th> --> 
+              <th>Длительность</th> 
             </tr>
           </thead>
           <tbody>
