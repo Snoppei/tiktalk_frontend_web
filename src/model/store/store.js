@@ -10,7 +10,7 @@ import {
 } from '../api'; 
 
 import { createStore } from 'vuex';
-import { getAudioDuration } from '../minioapi'; // Путь к вашему minioapi.js
+import { getAudioDuration } from '../minioapi';
 
 
 
@@ -64,7 +64,7 @@ export const podcasts = {
       state.sortParam = sortParam;
     },
     SET_PODCAST_DURATION(state, { podcastId, duration }) {
-      const index = state.podcasts.findIndex(podcast => podcast.audioUrl === podcastId); // Используем audioUrl как id
+      const index = state.podcasts.findIndex(podcast => podcast.audioUrl === podcastId);
       if (index !== -1) {
         state.podcasts[index].duration = duration;
       }
@@ -162,7 +162,6 @@ export const podcasts = {
         commit('SET_PODCAST_DURATION', { podcastId: audioUrl, duration }); 
       } catch (error) {
         console.error('Ошибка при получении длительности:', error);
-        // Обработка ошибки:
         commit('SET_PODCAST_DURATION', { 
           podcastId: audioUrl, 
           duration: null, 
