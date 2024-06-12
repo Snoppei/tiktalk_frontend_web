@@ -1,22 +1,35 @@
 <script>
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { authenticate } from '../model/keycloak';
 
 export default {
   setup() {
     const router = useRouter();
+    const login = ref('');
+    const password = ref('');
 
-    const onSubmit = () => {
-      router.push('/podcasts');
-    }
-    localStorage.setItem('isAuthenticated', true);
+    const onSubmit = async () => {
+      try {
+        const response = await authenticate(login.value, password.value);
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        localStorage.setItem('isAuthenticated', true);
+        console.log(response.access_token);
+        router.push('/podcasts');
+      } catch (error) {
+        console.error('Login failed', error);
+      }
+    };
 
     return {
+      login,
+      password,
       onSubmit
-    }
+    };
   }
 }
 </script>
-
 <template>
   <div class="login-page">
     <div class="logo">
@@ -24,14 +37,14 @@ export default {
     </div>
     <div class="form-container">
       <h1>Авторизация</h1>
-      <form @submit="onSubmit">
+      <form @submit.prevent="onSubmit">
         <div>
           <p>Логин</p>
-          <input class="fields" type="text" v-model="login" placeholder="">
+          <input class="fields" type="text" v-model="login" placeholder="Введите логин">
         </div>
         <div>
           <p>Пароль</p>
-          <input class="fields" type="text" v-model="password" placeholder="">
+          <input class="fields" type="text" v-model="password" placeholder="Введите пароль">
         </div>
         <button class="auth" type="submit" style="cursor: pointer;">Войти</button>
       </form>
