@@ -46,6 +46,7 @@ export default {
       handler(newPodcasts) {
         newPodcasts.forEach((podcast) => {
           if (podcast.audioUrl && !podcast.duration) {
+            console.log(podcast.audioUrl);
             this.$store.dispatch('podcasts/fetchPodcastDuration', podcast.audioUrl)
               .catch((error) => {
                 console.error(`Ошибка получения длительности:`, error);
