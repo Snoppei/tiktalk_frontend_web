@@ -19,9 +19,12 @@ export const podcasts = {
   state: {
     podcasts: [],
     history: [],
-    currentPage: 1, 
+    currentPage: 1,
+    currentPageHistory: 1,
     pageSize: 15,
-    sortParam: 'REPORTS_COUNT_DESC' 
+    pageSizeHistory: 15,
+    sortParam: 'REPORTS_COUNT_DESC',
+    sortParamHistory: 'CREATION_DATE_ASC'
   },
   mutations: {
     SET_PODCASTS(state, podcasts) {
@@ -57,11 +60,17 @@ export const podcasts = {
     SET_CURRENT_PAGE(state, page) {
       state.currentPage = page;
     },
+    SET_CURRENT_PAGE_HISTORY(state, page) {
+      state.currentPageHistory = page;
+    },
     SET_PAGE_SIZE(state, size) { 
       state.pageSize = size;
     },
     SET_SORT_PARAM(state, sortParam) {
       state.sortParam = sortParam;
+    },
+    SET_SORT_PARAM_HISTORY(state, sortParam) {
+      state.sortParamHistory = sortParam;
     },
     SET_PODCAST_DURATION(state, { podcastId, duration }) {
       const index = state.podcasts.findIndex(podcast => podcast.audioUrl === podcastId);
@@ -69,6 +78,12 @@ export const podcasts = {
         state.podcasts[index].duration = duration;
       }
     },
+    SET_PODCAST_DURATION_HISTORY(state, { podcastId, duration }) {
+      const index = state.history.findIndex(podcast => history.audioUrl === podcastId);
+      if (index !== -1) {
+        state.history[index].duration = duration;
+      }
+    }
   },
   actions: {
     async fetchPodcasts({ commit, state, dispatch }) {
@@ -156,6 +171,9 @@ export const podcasts = {
     setSortParam({ commit }, sortParam) {
       commit('SET_SORT_PARAM', sortParam);
     },
+    setSortParamHistory({ commit }, sortParam) {
+      commit('SET_SORT_PARAM_HISTORY', sortParam);
+    },
     async fetchPodcastDuration({ commit }, audioUrl) {
       try {
         const duration = await getAudioDuration(audioUrl);
@@ -168,7 +186,20 @@ export const podcasts = {
           durationError: 'Не удалось получить длительность' 
         });
       }
-    }
+    },
+    async fetchPodcastDurationHistory({ commit }, audioUrl) {
+      try {
+        const duration = await getAudioDuration(audioUrl);
+        commit('SET_PODCAST_DURATION', { podcastId: audioUrl, duration }); 
+      } catch (error) {
+        console.error('Ошибка при получении длительности:', error);
+        commit('SET_PODCAST_DURATION', { 
+          podcastId: audioUrl, 
+          duration: null, 
+          durationError: 'Не удалось получить длительность' 
+        });
+      }
+    },
   },
   getters: {
     getPodcastById: (state) => (id) => {
