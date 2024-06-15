@@ -200,6 +200,7 @@ export default {
       try {
         const response = await rejectReports(podcastId, solution.value);
         console.log(response);
+        router.push('/podcasts');
       } catch (error) {
         console.error('Error rejecting complaints:', error);
       }
@@ -207,8 +208,10 @@ export default {
 
     const deletePodcast = async () => {
       try {
+        console.log(solution.value);
         const response = await banPodcast(podcastId, solution.value);
         console.log(response);
+        router.push('/podcasts');
       } catch (error) {
         console.error('Error banning podcast:', error);
       }
