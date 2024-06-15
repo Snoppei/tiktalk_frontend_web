@@ -83,6 +83,9 @@ export const podcasts = {
       if (index !== -1) {
         state.history[index].duration = duration;
       }
+    },
+    FILTER_PODCASTS_WITHOUT_REPORTS(state) {
+      state.podcasts = state.podcasts.filter(podcast => podcast.reportsCount > 0); 
     }
   },
   actions: {
@@ -94,6 +97,7 @@ export const podcasts = {
           state.sortParam
         );
         commit('SET_PODCASTS', response.data);
+        commit('FILTER_PODCASTS_WITHOUT_REPORTS');
       } catch (error) {
         console.error('Ошибка при загрузке подкастов:', error);
       }
