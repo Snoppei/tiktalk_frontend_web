@@ -2,22 +2,46 @@
 import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
+import { getFileByPodcastId } from '../model/minioapi';
+import { getHistoryPodcastById } from '../model/api';
 
 export default {
   setup() {
-    const store = useStore();
     const route = useRoute();
     const router = useRouter();
     const podcastId = route.params.id;
-    const podcast = computed(() => store.getters.getHistoryPodcastById(parseInt(podcastId)));
+    const podcast = ref(null);
     const isPlaying = ref(false);
     const currentTime = ref('00:00');
     const remainingTime = ref('');
     const volume = ref(1.0);
     let intervalId = null;
     const progressPercentage = ref(0);
-
+    const imageSrc = ref(null);
+    const audioSrc = ref(null);
     const player = ref(null);
+
+    const fetchPodcastHistory = async () => {
+      try {
+        const response = await getHistoryPodcastById(podcastId);
+        podcast.value = response.data;
+
+        const imageUrl = `${response.data.imageUrl}`; 
+        const audioUrl = `${response.data.audioUrl}`; 
+
+        try {
+          const imageResponse = await getFileByPodcastId(imageUrl);
+          imageSrc.value = URL.createObjectURL(imageResponse.data);
+          const audioResponse = await getFileByPodcastId(audioUrl);
+          audioSrc.value = URL.createObjectURL(audioResponse.data);
+        } catch (error) {
+          console.error('Ошибка загрузки файлов с Minio:', error);
+        }
+      } catch (error) {
+        console.error('Ошибка получения подкаста:', error);
+        router.push('/history');
+      }
+    };
 
     const logout = () => {
       localStorage.setItem('isAuthenticated', false);
@@ -104,9 +128,8 @@ export default {
     });
 
     onMounted(() => {
-      if (!podcast.value) {
-        router.push('/history');
-      } else if (player.value) {
+      fetchPodcastHistory();
+      if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
         });
@@ -114,6 +137,8 @@ export default {
     });
 
     return {
+      imageSrc,
+      audioSrc,
       playPauseClass,
       seekTo,
       podcast,
@@ -154,22 +179,22 @@ export default {
     <main>
       <div class="complaints-section">
         <div class="podcast-preview">
-          <img :src="podcast.imageUrl" alt="Podcast Image" />
-          <h2>{{ podcast.name }}</h2>
-          <p class="author">Автор: {{ podcast.author }}</p>
+          <img class="podcast-image":src="imageSrc" alt="Podcast Image" />
+          <h2 v-if="podcast">{{ podcast.name }}</h2>
+          <!-- <p class="author">Автор: {{ podcast.author }}</p> -->
         </div>
 
         <div class="complaints">
           <h3>Причина решения</h3>
           <div class="solution">
-            <p> {{ podcast.solution }}</p>
+            <p v-if="podcast"> {{ podcast.verdict }}</p>
           </div>
         </div>
       </div>
       <div class="podcast-desription">
-        <p class="description">{{ podcast.description }}</p>
+        <p class="description" v-if="podcast">{{ podcast.description }}</p>
       </div>
-      <div class="wrapper">
+      <div class="wrapper" v-if="podcast">
         <div class="podcast-player">
           <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
             <source :src="podcast.audioUrl" type="audio/mpeg">
