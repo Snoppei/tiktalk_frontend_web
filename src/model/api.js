@@ -20,7 +20,7 @@ apiClient.interceptors.request.use(config => {
   return config;
 });
 
-export const getPodcasts = (page = 0, size = 10, sortParam = 'REPORTS_COUNT_DESC') => {
+export const getPodcasts = (page = 0, size = 15, sortParam = 'REPORTS_COUNT_DESC') => {
   return apiClient.get('/podcast/', {
     params: { page, size, sortParam }
   });
@@ -41,16 +41,18 @@ export const getReportsByPodcastId = (podcastId, page = 0, size = 7, sortParam =
 };
 
 export const banPodcast = (podcastId, verdict) => {
-  return apiClient.post(`/podcast/ban/podcast/${podcastId}`, verdict);
+  const encodedVerdict = encodeURIComponent(verdict);
+  return apiClient.post(`/podcast/ban/podcast/${podcastId}?verdict=${encodedVerdict}`);
 };
 
 export const rejectReports = (podcastId, verdict) => {
-  return apiClient.post(`/podcast/reject/podcast/${podcastId}`, verdict);
+  const encodedVerdict = encodeURIComponent(verdict);
+  return apiClient.post(`/podcast/reject/${podcastId}?verdict=${encodedVerdict}`);
 };
 
-export const getHistoryPodcasts = (page = 0, size = 10, sortParam = '') => {
-  return apiClient.get('//' , {
-    params: {}
+export const getHistoryPodcasts = (page = 0, size = 15, sortParam = 'CREATION_DATE_ASC') => {
+  return apiClient.get('/reported-podcast/' , {
+    params: { page, size, sortParam }
   });
 };
 
