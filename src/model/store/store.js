@@ -24,7 +24,7 @@ export const podcasts = {
     pageSize: 15,
     pageSizeHistory: 15,
     sortParam: 'REPORTS_COUNT_DESC',
-    sortParamHistory: 'CREATION_DATE_ASC'
+    sortParamHistory: 'ID_ASC'
   },
   mutations: {
     SET_PODCASTS(state, podcasts) {
@@ -79,7 +79,7 @@ export const podcasts = {
       }
     },
     SET_PODCAST_DURATION_HISTORY(state, { podcastId, duration }) {
-      const index = state.history.findIndex(podcast => history.audioUrl === podcastId);
+      const index = state.history.findIndex(history => history.audioUrl === podcastId);
       if (index !== -1) {
         state.history[index].duration = duration;
       }
@@ -102,6 +102,11 @@ export const podcasts = {
       commit('SET_CURRENT_PAGE', page);
       localStorage.setItem('currentPage', page);
       dispatch('fetchPodcasts');
+    },
+    setCurrentPageHistory({ commit, dispatch }, page) {
+      commit('SET_CURRENT_PAGE_HISTORY', page);
+      localStorage.setItem('currentPageHistory', page);
+      dispatch('fetchHistoryPodcasts');
     },
     async fetchPodcastDetails({ commit }, podcastId) {
       try {
@@ -150,7 +155,7 @@ export const podcasts = {
     },
     async fetchHistoryPodcasts({ commit, state }) {
       try {
-        const response = await getHistoryPodcasts(state.currentPage, state.pageSize, state.sortParam);
+        const response = await getHistoryPodcasts(state.currentPageHistory - 1, state.pageSize, state.sortParamHistory);
         commit('SET_HISTORY', response.data);
       } catch (error) {
         console.error('Ошибка при загрузке истории подкастов:', error);
