@@ -15,7 +15,6 @@ export default {
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('refresh_token', response.refresh_token);
         localStorage.setItem('isAuthenticated', true);
-        console.log(response.access_token);
         router.push('/podcasts');
       } catch (error) {
         console.error('Login failed', error);
