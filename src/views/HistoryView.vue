@@ -95,7 +95,7 @@ export default {
                 <router-link :to="`/history/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
               <td>{{ podcast.reportType === 'DELETE' ? 'Удален' : 'Жалобы отклонены' }}</td> 
-              <td>{{ podcast.duration ? formatDuration(podcast.duration) : (podcast.durationError || 'Аудио отсутствует') }}</td>  
+              <td>{{ podcast.duration ? formatDuration(podcast.duration) : '' }}</td>  
             </tr>
           </tbody>
         </table>
