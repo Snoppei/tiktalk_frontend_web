@@ -195,10 +195,10 @@ export const podcasts = {
     async fetchPodcastDurationHistory({ commit }, audioUrl) {
       try {
         const duration = await getAudioDuration(audioUrl);
-        commit('SET_PODCAST_DURATION', { podcastId: audioUrl, duration }); 
+        commit('SET_PODCAST_DURATION_HISTORY', { podcastId: audioUrl, duration }); 
       } catch (error) {
         console.error('Ошибка при получении длительности:', error);
-        commit('SET_PODCAST_DURATION', { 
+        commit('SET_PODCAST_DURATION_HISTORY', { 
           podcastId: audioUrl, 
           duration: null, 
           durationError: 'Не удалось получить длительность' 
