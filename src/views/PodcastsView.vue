@@ -101,7 +101,6 @@ export default {
         </table>
         <div class="pagination">
           <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;"><</button>
-          <!-- <span class="page-info">{{ currentPage }} / {{ totalPages }}</span> -->
           <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage" style="cursor: pointer;">></button>
         </div>
       </div>
