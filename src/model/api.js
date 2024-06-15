@@ -41,16 +41,14 @@ export const getReportsByPodcastId = (podcastId, page = 0, size = 7, sortParam =
 };
 
 export const banPodcast = (podcastId, verdict) => {
-  const encodedVerdict = encodeURIComponent(verdict);
-  return apiClient.post(`/podcast/ban/podcast/${podcastId}?verdict=${encodedVerdict}`);
+  return apiClient.post(`/podcast/ban/podcast/${podcastId}?verdict=${verdict}`);
 };
 
 export const rejectReports = (podcastId, verdict) => {
-  const encodedVerdict = encodeURIComponent(verdict);
-  return apiClient.post(`/podcast/reject/${podcastId}?verdict=${encodedVerdict}`);
+  return apiClient.post(`/podcast/reject/${podcastId}?verdict=${verdict}`);
 };
 
-export const getHistoryPodcasts = (page = 0, size = 15, sortParam = 'CREATION_DATE_ASC') => {
+export const getHistoryPodcasts = (page = 0, size = 15, sortParam = 'ID_ASC') => {
   return apiClient.get('/reported-podcast/' , {
     params: { page, size, sortParam }
   });
