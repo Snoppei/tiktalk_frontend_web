@@ -55,7 +55,7 @@ export const getHistoryPodcasts = (page = 0, size = 15, sortParam = 'ID_ASC') =>
 };
 
 export const getHistoryPodcastById = (podcastId) => {
-  return apiClient.get(`//`);
+  return apiClient.get(`/reported-podcast/${podcastId}`);
 };
 
 // http://localhost:8089/tiktalk/api/album/?page=0&size=10&sortParam=ID_ASC
