@@ -37,8 +37,6 @@ export default {
         try {
           const imageResponse = await getFileByPodcastId(imageUrl);
           imageSrc.value = URL.createObjectURL(imageResponse.data);
-          console.log(imageUrl.slice(20));
-          console.log(imageUrl);
           const audioResponse = await getFileByPodcastId(audioUrl);
           audioSrc.value = URL.createObjectURL(audioResponse.data);
         } catch (error) {
@@ -56,9 +54,8 @@ export default {
       try {
         const response = await getReportsByPodcastId(podcastId, currentPage, pageSize, 'ID_DESC')
         filteredComplaints.value = response.data;
-        console.log('Reports:', filteredComplaints.value);
       } catch (error) {
-        console.log('Error fetching reports:', error);
+        console.log('Ошибка загрузки жалоб:', error);
       }
     }
 
@@ -72,9 +69,8 @@ export default {
       try {
         const response = await getPersonById(personId);
         author.value = response.data;
-        console.log('Author:', author.value);
       } catch (error) {
-        console.error('Error fetching author:', error);
+        console.error('Ошибка загрузки автора:', error);
       }
     };
 
@@ -97,10 +93,7 @@ export default {
 
     const prevPage = () => {
       if (currentPage.value > 0) {
-        console.log('Before: ', currentPage.value);
         currentPage.value--;
-        console.log('After: ', currentPage.value);
-        // fetchReports(currentPage.value);
       } else {
         currentPage.value = 0;
       }
@@ -108,9 +101,7 @@ export default {
 
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
-        console.log('Before: ', currentPage.value);
         currentPage.value++;
-        console.log('After: ', currentPage.value);
       } else {
         currentPage.value = totalPages.value;
       }
@@ -199,21 +190,18 @@ export default {
     const rejectComplaints = async () => {
       try {
         const response = await rejectReports(podcastId, solution.value);
-        console.log(response);
         router.push('/podcasts');
       } catch (error) {
-        console.error('Error rejecting complaints:', error);
+        console.error('Ошибка отклонения жалоб:', error);
       }
     };
 
     const deletePodcast = async () => {
       try {
-        console.log(solution.value);
         const response = await banPodcast(podcastId, solution.value);
-        console.log(response);
         router.push('/podcasts');
       } catch (error) {
-        console.error('Error banning podcast:', error);
+        console.error('Ошибка удаления подкаста:', error);
       }
     };
 
