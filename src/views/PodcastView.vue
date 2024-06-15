@@ -55,7 +55,7 @@ export default {
         const response = await getReportsByPodcastId(podcastId, currentPage, pageSize, 'ID_DESC')
         filteredComplaints.value = response.data;
       } catch (error) {
-        console.error('Ошибка загрузки жалоб:', error);
+        console.log('Ошибка загрузки жалоб:', error);
       }
     }
 
