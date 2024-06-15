@@ -96,7 +96,7 @@ export default {
                 <router-link :to="`/podcasts/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
               <td>{{ podcast.reportsCount }}</td>
-              <td>{{ podcast.duration ? formatDuration(podcast.duration) : 'Аудио отсутствует' }}</td>  
+              <td>{{ podcast.duration ? formatDuration(podcast.duration) : '' }}</td>  
             </tr>
           </tbody>
         </table>
