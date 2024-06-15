@@ -1,55 +1,73 @@
 <script>
-import { useStore } from 'vuex';
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { mapState, mapActions } from 'vuex';
 
 export default {
-  setup() {
-    const store = useStore();
-    const podcasts = store.getters.HISTORY || [];
-    const router = useRouter();
-    const currentPage = ref(1);
-    const pageSize = 15;
-
-    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
-
-    const hasNextPage = computed(() => currentPage.value < totalPages.value);
-
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
-      }
-    };
-
-    const logout = () => {
+  computed: {
+    ...mapState('podcasts', ['history', 'currentPageHistory', 'pageSizeHistory']),
+    hasNextPageHistory() {
+      return this.history.length === this.pageSizeHistory;
+    },
+    hasPrevPageHistory() {
+      return this.currentPageHistory > 1;
+    },
+    paginatedHistory() {
+      return this.history || [];
+    },
+  },
+  methods: {
+    ...mapActions('podcasts', ['fetchHistoryPodcasts', 'setCurrentPageHistory']),
+    logout() {
       localStorage.setItem('isAuthenticated', false);
-      router.push('/');
-    };
-
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
+      this.$router.push('/');
+    },
+    prevPage() {
+      if (this.hasPrevPageHistory) {
+        this.setCurrentPageHistory(this.currentPageHistory - 1);
       }
-    };
-
-    const paginatedPodcasts = computed(() => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      return podcasts.slice(startIndex, endIndex);
-    });
-
-    return {
-      paginatedPodcasts,
-      currentPage,
-      totalPages,
-      hasNextPage,
-      prevPage,
-      nextPage,
-      logout
-    };
+    },
+    nextPage() {
+      if (this.hasNextPageHistory) {
+        this.setCurrentPageHistory(this.currentPageHistory + 1);
+      }
+    },
+    updateCurrentPageHistory(page) {
+      localStorage.setItem('currentPageHistory', page);
+      this.setCurrentPageHistory(page);
+    },
+    formatDuration(duration) {
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
+  },
+  watch: {
+    paginatedHistory: {
+      immediate: true, 
+      handler(newHistory) {
+        newHistory.forEach((podcast) => {
+          if (podcast.audioUrl && !podcast.duration) {
+            this.$store.dispatch('podcasts/fetchPodcastDurationHistory', podcast.audioUrl)
+              .catch((error) => {
+                console.error(`Ошибка получения длительности:`, error);
+                this.$set(podcast, 'duration', null); 
+                this.$set(podcast, 'durationError', 'Не удалось получить длительность');
+              });
+          }
+        });
+      },
+    },
+  },
+  mounted() {
+    const savedPage = localStorage.getItem('currentPageHistory');
+    if (savedPage) {
+      this.setCurrentPageHistory(Number(savedPage));
+    } else {
+      this.fetchHistoryPodcasts();
+    }
   },
 };
 </script>
+
 <template>
   <div class="podcast-page">
     <header>
@@ -62,29 +80,28 @@ export default {
     </header>
     <main>
       <div class="list">
-        <h1>Список подкастов с жалобами</h1>
+        <h1>История</h1>
         <table class="podcasts">
           <thead>
             <tr class="tr-list">
               <th>Название</th>
               <th>Действие</th>
-              <th>Длительность</th>
+              <th>Длительность</th> 
             </tr>
           </thead>
           <tbody>
-            <tr class="tr-list" v-for="podcast in paginatedPodcasts" :key="podcast.id">
+            <tr class="tr-list" v-for="podcast in paginatedHistory" :key="podcast.id">
               <td>
                 <router-link :to="`/history/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
-              <td>{{ podcast.decision }}</td>
-              <td>{{ podcast.duration }}</td>
+              <td>{{ podcast.reportType === 'DELETE' ? 'Удален' : 'Жалобы отклонены' }}</td> 
+              <td>{{ podcast.duration ? formatDuration(podcast.duration) : (podcast.durationError || 'Аудио отсутствует') }}</td>  
             </tr>
           </tbody>
         </table>
         <div class="pagination">
-          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;">&lt</button>
-              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
-                style="cursor: pointer;">></button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPageHistory === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPageHistory" style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
@@ -93,6 +110,7 @@ export default {
     </footer>
   </div>
 </template>
+
 <style>
 .logout {
   display: block;
