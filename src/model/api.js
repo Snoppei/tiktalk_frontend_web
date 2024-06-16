@@ -1,8 +1,6 @@
 import axios from 'axios';
-
-function getAccessToken() {
-  return localStorage.getItem('access_token');
-}
+import { refreshToken } from './keycloak';
+import router from '../router';
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:8089/tiktalk/api',
@@ -12,10 +10,47 @@ const apiClient = axios.create({
   },
 });
 
-apiClient.interceptors.request.use(config => {
-  const token = getAccessToken();
+apiClient.interceptors.request.use(async config => {
+  const token = localStorage.getItem('access_token');
+
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const tokenReceivedAt = parseInt(localStorage.getItem('token_received_at'), 10);
+    const expiresIn = parseInt(localStorage.getItem('expires_in'), 10);
+    if (!isNaN(tokenReceivedAt) && !isNaN(expiresIn)) { 
+      const expirationTime = tokenReceivedAt + expiresIn;
+      const currentTime = Math.floor(Date.now() / 1000);
+
+
+      if (currentTime > expirationTime) { 
+        console.error('Токен истек, выход...');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('expires_in');
+        localStorage.removeItem('token_received_at');
+        localStorage.removeItem('isAuthenticated');
+        router.push('/'); 
+        return Promise.reject(new Error('Token expired'));
+      } 
+
+      if (currentTime + 60 > expirationTime) {
+        try {
+          const refreshedToken = await refreshToken(localStorage.getItem('refresh_token'));
+          localStorage.setItem('access_token', refreshedToken.access_token);
+          localStorage.setItem('refresh_token', refreshedToken.refresh_token);
+          localStorage.setItem('token_received_at', Math.floor(Date.now() / 1000));
+          localStorage.setItem('expires_in', refreshedToken.expires_in);
+        } catch (error) {
+          console.error('Token refresh failed', error);
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('expires_in');
+          localStorage.removeItem('token_received_at');
+          localStorage.removeItem('isAuthenticated');
+          router.push({ name: 'Login' }); 
+        }
+      }
+    }
+    config.headers.Authorization = `Bearer ${localStorage.getItem('access_token')}`;
   }
   return config;
 });
@@ -57,5 +92,3 @@ export const getHistoryPodcasts = (page = 0, size = 15, sortParam = 'ID_ASC') =>
 export const getHistoryPodcastById = (podcastId) => {
   return apiClient.get(`/reported-podcast/${podcastId}`);
 };
-
-// http://localhost:8089/tiktalk/api/album/?page=0&size=10&sortParam=ID_ASC
