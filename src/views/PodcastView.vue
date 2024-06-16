@@ -79,7 +79,11 @@ export default {
     };
 
     const logout = () => {
-      localStorage.setItem('isAuthenticated', false);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('expires_in');
+      localStorage.removeItem('token_received_at');
+      localStorage.removeItem('isAuthenticated');
       router.push('/');
     };
 
