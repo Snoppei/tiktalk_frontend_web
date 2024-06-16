@@ -17,8 +17,12 @@ export default {
   methods: {
     ...mapActions('podcasts', ['fetchPodcasts', 'setCurrentPage']),
     logout() {
-      localStorage.setItem('isAuthenticated', false);
-      this.$router.push('/');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('expires_in');
+      localStorage.removeItem('token_received_at');
+      localStorage.removeItem('isAuthenticated');
+      this.$router.push('/'); 
     },
     prevPage() {
       if (this.hasPrevPage) {

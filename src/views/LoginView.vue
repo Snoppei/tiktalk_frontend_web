@@ -1,5 +1,5 @@
 <script>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { authenticate } from '../model/keycloak';
 
@@ -8,18 +8,29 @@ export default {
     const router = useRouter();
     const login = ref('');
     const password = ref('');
+    const isAuthenticated = ref('');
+    
+
 
     const onSubmit = async () => {
       try {
         const response = await authenticate(login.value, password.value);
         localStorage.setItem('access_token', response.access_token);
         localStorage.setItem('refresh_token', response.refresh_token);
-        localStorage.setItem('isAuthenticated', true);
+        localStorage.setItem('expires_in', response.expires_in);
+        localStorage.setItem('token_received_at', Math.floor(Date.now() / 1000));
+        localStorage.setItem('isAuthenticated', 'true');
         router.push('/podcasts');
       } catch (error) {
-        console.error('Login failed', error);
+        console.log('Ошибка авторизации:', error);
       }
     };
+
+    onMounted(() => {
+      if(localStorage.getItem('isAuthenticated') === 'true') {
+        router.push('/podcasts');
+      }
+    });
 
     return {
       login,
