@@ -15,14 +15,16 @@ export default {
     },
   },
   methods: {
-    ...mapActions('podcasts', ['fetchHistoryPodcasts', 'setCurrentPageHistory']),
+    ...mapActions('podcasts', ['fetchHistoryPodcasts', 'setCurrentPageHistory', 'setCurrentPage']),
     logout() {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('expires_in');
       localStorage.removeItem('token_received_at');
       localStorage.removeItem('isAuthenticated');
-      this.$router.push('/'); 
+      localStorage.removeItem('currentPage');
+      localStorage.removeItem('currentPageHistory');
+      this.$router.push('/');
     },
     prevPage() {
       if (this.hasPrevPageHistory) {
@@ -48,6 +50,9 @@ export default {
     paginatedHistory: {
       immediate: true, 
       handler(newHistory) {
+        if (newHistory.length === 0 && this.currentPageHistory > 1) {
+          this.setCurrentPage(this.currentPageHistory - 1);
+        }
         newHistory.forEach((podcast) => {
           if (podcast.audioUrl && !podcast.duration) {
             this.$store.dispatch('podcasts/fetchPodcastDurationHistory', podcast.audioUrl)
@@ -65,15 +70,31 @@ export default {
     const savedPage = localStorage.getItem('currentPageHistory');
     if (savedPage) {
       this.setCurrentPageHistory(Number(savedPage));
+      this.fetchHistoryPodcasts()
+        .then(() => {
+          setTimeout(() => {
+            this.showPage = true; 
+          }, 50);
+        });
     } else {
-      this.fetchHistoryPodcasts();
+      this.fetchHistoryPodcasts()
+        .then(() => {
+          setTimeout(() => {
+            this.showPage = true; 
+          }, 50);
+        });
     }
   },
+  data() {
+    return {
+      showPage: false // Флаг для отображения страницы
+    };
+  }
 };
 </script>
 
 <template>
-  <div class="podcast-page">
+  <div class="podcast-page" v-if="showPage">
     <header>
       <div class="nav-buttons">
         <router-link to="/metrics">Метрики</router-link>
@@ -87,7 +108,7 @@ export default {
         <h1>История</h1>
         <table class="podcasts">
           <thead>
-            <tr class="tr-list">
+            <tr class="tr-list1">
               <th>Название</th>
               <th>Действие</th>
               <th>Длительность</th> 
@@ -98,13 +119,20 @@ export default {
               <td>
                 <router-link :to="`/history/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
-              <td>{{ podcast.reportType === 'DELETE' ? 'Удален' : 'Жалобы отклонены' }}</td> 
-              <td>{{ podcast.duration ? formatDuration(podcast.duration) : '' }}</td>  
+              <td>
+                <router-link :to="`/history/${podcast.id}`">
+                  {{ podcast.reportType === 'DELETE' ? 'Удален' : 'Жалобы отклонены' }}
+                </router-link>
+              </td> 
+              <td>
+                <router-link :to="`/history/${podcast.id}`">{{ podcast.duration ? formatDuration(podcast.duration) : '' }}</router-link>
+              </td>  
             </tr>
           </tbody>
         </table>
         <div class="pagination">
           <button class="pagination-button" @click="prevPage" :disabled="currentPageHistory === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPageHistory === 1">{{ currentPageHistory }}</button>
           <button class="pagination-button" @click="nextPage" :disabled="!hasNextPageHistory" style="cursor: pointer;">></button>
         </div>
       </div>
@@ -118,9 +146,9 @@ export default {
 <style>
 .logout {
   display: block;
-  width: 196px;
-  height: 48px;
-  font-size: 30px;
+  width: 98px;
+  height: 36px;
+  font-size: 18px;
   padding: 5px;
   background-color: #FF453A;
   color: #fff;
@@ -139,9 +167,30 @@ thead {
   width: 100%;
 }
 
+.tr-list1 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 7px 0 8px 0;
+  position: relative;
+}
+
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  margin: 7px 0 8px 0;
+  position: relative;
+}
+
+.tr-list::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-bottom: 1px solid #757575;
+}
+.tr-list:hover::after { 
+  border-bottom-color: #3067DE; /* Меняем цвет границы на голубой */
 }
 
 td {
@@ -158,6 +207,7 @@ footer {
   display: flex;
   flex-direction: row;
   gap: 5px;
+  margin: 15px 0 15px 0;
 }
 
 .list {
@@ -167,7 +217,7 @@ footer {
   align-items: center;
   padding: 5px;
   width: 1280px;
-
+  border-radius: 10px;
 }
 
 .podcast-page {
@@ -184,9 +234,9 @@ header {
 
 .pagination-button {
   display: block;
-  width: 60px;
-  height: 60px;
-  font-size: 32px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
   padding: 10px;
   background-color: #1A1B22;
   color: #fff;
