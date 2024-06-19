@@ -99,7 +99,7 @@ export const podcasts = {
         commit('SET_PODCASTS', response.data);
         commit('FILTER_PODCASTS_WITHOUT_REPORTS');
       } catch (error) {
-        console.error('Ошибка при загрузке подкастов:', error);
+        return;
       }
     },
     setCurrentPage({ commit, dispatch }, page) {
@@ -117,7 +117,6 @@ export const podcasts = {
         const response = await getPodcastById(podcastId);
         return response.data;
       } catch (error) {
-        console.error('Ошибка при загрузке подкаста:', error);
         throw error; 
       }
     },
