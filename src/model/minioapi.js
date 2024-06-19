@@ -17,7 +17,6 @@ export async function getAudioDuration(audioUrl) {
 
     return metadata.format.duration || null; 
   } catch (error) {
-    console.error('Ошибка получения длительности:', error);
     return null;
   }
 }
