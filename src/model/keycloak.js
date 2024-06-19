@@ -7,28 +7,28 @@ const keycloakConfig = {
   clientSecret: '5Oy46vEfW52xGGSMKAfnng95tubAeERW'
 };
 
+
+
 export async function authenticate(username, password) {
-  try {
-    const response = await axios.post(
-      `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/token`,
-      new URLSearchParams({
-        grant_type: 'password',
-        client_id: keycloakConfig.clientId,
-        client_secret: keycloakConfig.clientSecret,
-        username,
-        password
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+  return axios.post(
+    `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/token`,
+    new URLSearchParams({
+      grant_type: 'password',
+      client_id: keycloakConfig.clientId,
+      client_secret: keycloakConfig.clientSecret,
+      username,
+      password
+    }),
+    {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
-    );
-    return response.data;
-  } catch (error) {
-    console.error('Authentication failed', error);
-    throw error;
-  }
+    }
+  )
+  .then(response => response.data)
+  .catch(error => {
+    return null; 
+  });
 }
 
 export async function refreshToken(refreshToken) {
@@ -49,8 +49,28 @@ export async function refreshToken(refreshToken) {
     );
     return response.data;
   } catch (error) {
-    console.error('Token refresh failed', error);
+    return;
+  }
+}
+
+export async function checkAdminRole(token) { 
+  try {
+    const response = await axios.post(
+      `${keycloakConfig.url}/realms/${keycloakConfig.realm}/protocol/openid-connect/token/introspect`,
+      new URLSearchParams({
+        token: token,
+        client_id: keycloakConfig.clientId,
+        client_secret: keycloakConfig.clientSecret,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    return response.data.active && response.data.realm_access.roles.includes('ADMIN');
+  } catch (error) {
     throw error;
   }
 }
-// export default keycloak;
