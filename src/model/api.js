@@ -3,10 +3,10 @@ import { refreshToken } from './keycloak';
 import router from '../router';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8089/tiktalk/api',
+  baseURL: 'https://tiktalkapp.ru/tiktalk/api',
   headers: {
     'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
+    // 'Access-Control-Allow-Origin': '*',
   },
 });
 
