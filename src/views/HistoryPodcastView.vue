@@ -1,5 +1,6 @@
 <script>
 import { useStore } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
 import { getFileByPodcastId } from '../model/minioapi';
@@ -20,6 +21,7 @@ export default {
     const imageSrc = ref(null);
     const audioSrc = ref(null);
     const player = ref(null);
+    const showPage = ref(false);
 
     const fetchPodcastHistory = async () => {
       try {
@@ -49,7 +51,9 @@ export default {
       localStorage.removeItem('expires_in');
       localStorage.removeItem('token_received_at');
       localStorage.removeItem('isAuthenticated');
-      router.push('/');
+      localStorage.removeItem('currentPage');
+      localStorage.removeItem('currentPageHistory');
+      router.push('/'); 
     };
     const play = () => {
       if (!isPlaying.value && player.value) {
@@ -131,8 +135,9 @@ export default {
       return isPlaying.value ? 'pause' : 'play';
     });
 
-    onMounted(() => {
-      fetchPodcastHistory();
+    onMounted(async () => {
+      await fetchPodcastHistory();
+      showPage.value = true;
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
@@ -161,7 +166,8 @@ export default {
       onEnd,
       togglePlayPause,
       setVolume,
-      logout
+      logout,
+      showPage,
     };
   },
 };
@@ -170,7 +176,7 @@ export default {
 
 
 <template>
-  <div id="podcast-complaints">
+  <div id="podcast-complaints" v-if="showPage">
     <header>
       <div class="nav-buttons">
         <router-link to="/metrics">Метрики</router-link>
@@ -184,7 +190,7 @@ export default {
       <div class="complaints-section">
         <div class="podcast-preview">
           <img class="podcast-image":src="imageSrc" alt="Podcast Image" />
-          <h2 v-if="podcast">{{ podcast.name }}</h2>
+          <h2 v-if="podcast" style="word-break: break-word;">{{ podcast.name }}</h2>
           <!-- <p class="author">Автор: {{ podcast.author }}</p> -->
         </div>
 
@@ -196,6 +202,7 @@ export default {
         </div>
       </div>
       <div class="podcast-desription">
+        <h2 class="description" v-if="podcast">Описание</h2>
         <p class="description" v-if="podcast">{{ podcast.description }}</p>
       </div>
       <div class="wrapper" v-if="podcast">
@@ -246,6 +253,8 @@ a {
 }
 .podcast-desription {
   margin: 20px 0 10px 0;
+  word-break: break-word;
+  width: 1280px;
 }
 .listOfComplaints {
   background-color: rgba(26, 27, 34, 0.7);
@@ -266,9 +275,11 @@ td {
 }
 .complaint-details p {
   padding-top: 2px;
+  width: 600px;
+  word-break: break-word;
 }
 .podcast-preview {
-  width: 100%;
+  width: 350px;
   height: auto;
 }
 .current-time {
@@ -295,30 +306,6 @@ td {
 .complaints-unit{
   display: block;
 }
-.delete {
-  display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
-  background-color: #FF453A;
-  color: #fff;
-  border: 1px solid #FF453A;
-  border-radius: 16px;
-  margin: 0 0;
-}
-.approve {
-  display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
-  background-color: #3067DE;
-  color: #fff;
-  border: 1px solid #3067DE;
-  border-radius: 16px;
-  margin: 0 0;
-}
 .menu {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -336,7 +323,7 @@ td {
   flex-direction: row;
   justify-content: center;
   gap: 5px;
-  margin: 5px 0 5px 0;
+  margin: 15px 0 15px 0;
 }
 .complaints-section {
   display: grid;
@@ -344,9 +331,9 @@ td {
 }
 .logout {
   display: block;
-  width: 196px;
-  height: 48px;
-  font-size: 30px;
+  width: 98px;
+  height: 36px;
+  font-size: 18px;
   padding: 5px;
   background-color: #FF453A;
   color: #fff;
