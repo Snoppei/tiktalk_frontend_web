@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const keycloakConfig = {
-  url: 'http://localhost:8180',
+  url: 'https://tiktalkapp.ru',
   realm: 'tiktalk-realm',
   clientId: 'clientback',
-  clientSecret: '5Oy46vEfW52xGGSMKAfnng95tubAeERW'
+  clientSecret: 'UyPDzvqPjWbe410YszvjJo7vaGsUDaeM'
 };
 
 

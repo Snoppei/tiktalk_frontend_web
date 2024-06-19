@@ -55,7 +55,7 @@ export default {
         }
         newHistory.forEach((podcast) => {
           if (podcast.audioUrl && !podcast.duration) {
-            this.$store.dispatch('podcasts/fetchPodcastDurationHistory', podcast.audioUrl)
+            this.$store.dispatch('podcasts/fetchPodcastDurationHistory', podcast.id)
               .catch((error) => {
                 console.error(`Ошибка получения длительности:`, error);
                 this.$set(podcast, 'duration', null); 
@@ -87,7 +87,7 @@ export default {
   },
   data() {
     return {
-      showPage: false // Флаг для отображения страницы
+      showPage: false
     };
   }
 };
@@ -190,7 +190,7 @@ thead {
   border-bottom: 1px solid #757575;
 }
 .tr-list:hover::after { 
-  border-bottom-color: #3067DE; /* Меняем цвет границы на голубой */
+  border-bottom-color: #3067DE;
 }
 
 td {
