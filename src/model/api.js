@@ -22,7 +22,6 @@ apiClient.interceptors.request.use(async config => {
 
 
       if (currentTime > expirationTime) { 
-        console.error('Токен истек, выход...');
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('expires_in');
@@ -32,7 +31,7 @@ apiClient.interceptors.request.use(async config => {
         return Promise.reject(new Error('Token expired'));
       } 
 
-      if (currentTime + 60 > expirationTime) {
+      if (currentTime + 300 > expirationTime) {
         try {
           const refreshedToken = await refreshToken(localStorage.getItem('refresh_token'));
           localStorage.setItem('access_token', refreshedToken.access_token);
@@ -40,7 +39,6 @@ apiClient.interceptors.request.use(async config => {
           localStorage.setItem('token_received_at', Math.floor(Date.now() / 1000));
           localStorage.setItem('expires_in', refreshedToken.expires_in);
         } catch (error) {
-          console.error('Token refresh failed', error);
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('expires_in');

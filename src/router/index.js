@@ -18,7 +18,6 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
-    console.log(isAuthenticated);
     if (to.matched.some(record => record.meta.requiresAuth) && (!isAuthenticated || isAuthenticated === 'false')) {
       next({ name: 'Login' }); 
     } else {
