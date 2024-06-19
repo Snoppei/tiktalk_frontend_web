@@ -24,7 +24,7 @@ export const podcasts = {
     pageSize: 15,
     pageSizeHistory: 15,
     sortParam: 'REPORTS_COUNT_DESC',
-    sortParamHistory: 'ID_ASC'
+    sortParamHistory: 'CREATION_DATE_DESC'
   },
   mutations: {
     SET_PODCASTS(state, podcasts) {
@@ -79,7 +79,7 @@ export const podcasts = {
       }
     },
     SET_PODCAST_DURATION_HISTORY(state, { podcastId, duration }) {
-      const index = state.history.findIndex(history => history.audioUrl === podcastId);
+      const index = state.history.findIndex(history => history.id === podcastId);
       if (index !== -1) {
         state.history[index].duration = duration;
       }
@@ -195,16 +195,17 @@ export const podcasts = {
         });
       }
     },
-    async fetchPodcastDurationHistory({ commit }, audioUrl) {
+    async fetchPodcastDurationHistory({ commit, state }, podcastId) { 
       try {
-        const duration = await getAudioDuration(audioUrl);
-        commit('SET_PODCAST_DURATION_HISTORY', { podcastId: audioUrl, duration }); 
+        const podcast = state.history.find(p => p.id === podcastId); 
+        const duration = await getAudioDuration(podcast.audioUrl); 
+        commit('SET_PODCAST_DURATION_HISTORY', { podcastId, duration }); 
       } catch (error) {
         console.error('Ошибка при получении длительности:', error);
-        commit('SET_PODCAST_DURATION_HISTORY', { 
-          podcastId: audioUrl, 
-          duration: null, 
-          durationError: 'Не удалось получить длительность' 
+        commit('SET_PODCAST_DURATION_HISTORY', {
+          podcastId,
+          duration: null,
+          durationError: 'Не удалось получить длительность'
         });
       }
     },
