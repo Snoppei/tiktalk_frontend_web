@@ -84,11 +84,11 @@ export default {
       <form @submit.prevent="onSubmit">
         <div>
           <p>Логин</p>
-          <input class="fields" type="text" v-model="login" placeholder="Введите логин">
+          <input class="fields" type="text" v-model="login" placeholder="Введите логин" minlength="1" maxlength="30">
         </div>
         <div>
           <p>Пароль</p>
-          <input class="fields" type="password" v-model="password" placeholder="Введите пароль">
+          <input class="fields" type="password" v-model="password" placeholder="Введите пароль" minlength="1" maxlength="50">
         </div>
 
         <div class="error-message-container"> 
