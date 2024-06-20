@@ -179,7 +179,7 @@ export default {
   <div id="podcast-complaints" v-if="showPage">
     <header>
       <div class="nav-buttons">
-        <router-link to="/metrics">Метрики</router-link>
+        <a href="https://appmetrica.yandex.ru/overview?period=week&group=day&currency=rub&accuracy=medium&appId=4569310">Метрики</a>
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
