@@ -1,27 +1,12 @@
-# 9.1 tiktalk_frontend_web
+# 9.1 TikTalk Admin
 
-## Recommended IDE Setup
+## Vue.js, Vite
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Ссылка на Tiktalk Admin
 
-## Customize configuration
+ [https://web.tiktalkapp.ru/](https://web.tiktalkapp.ru/)
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## Логин и пароль от TikTalk Admin
+ Логин: WebAdmin1
+ Пароль: fc9767b6-e62b-4583-97bd-cb17690ccd28
 
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
