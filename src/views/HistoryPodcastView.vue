@@ -1,27 +1,59 @@
 <script>
 import { useStore } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { computed, ref, onMounted, watch } from 'vue';
+import { getFileByPodcastId } from '../model/minioapi';
+import { getHistoryPodcastById } from '../model/api';
 
 export default {
   setup() {
-    const store = useStore();
     const route = useRoute();
     const router = useRouter();
     const podcastId = route.params.id;
-    const podcast = computed(() => store.getters.getHistoryPodcastById(parseInt(podcastId)));
+    const podcast = ref(null);
     const isPlaying = ref(false);
     const currentTime = ref('00:00');
     const remainingTime = ref('');
     const volume = ref(1.0);
     let intervalId = null;
     const progressPercentage = ref(0);
-
+    const imageSrc = ref(null);
+    const audioSrc = ref(null);
     const player = ref(null);
+    const showPage = ref(false);
+
+    const fetchPodcastHistory = async () => {
+      try {
+        const response = await getHistoryPodcastById(podcastId);
+        podcast.value = response.data;
+
+        const imageUrl = `${response.data.imageUrl}`; 
+        const audioUrl = `${response.data.audioUrl}`; 
+
+        try {
+          const imageResponse = await getFileByPodcastId(imageUrl);
+          imageSrc.value = URL.createObjectURL(imageResponse.data);
+          const audioResponse = await getFileByPodcastId(audioUrl);
+          audioSrc.value = URL.createObjectURL(audioResponse.data);
+        } catch (error) {
+          console.error('Ошибка загрузки файлов с Minio:', error);
+        }
+      } catch (error) {
+        console.error('Ошибка получения подкаста:', error);
+        router.push('/history');
+      }
+    };
 
     const logout = () => {
-      localStorage.setItem('isAuthenticated', false);
-      router.push('/');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('expires_in');
+      localStorage.removeItem('token_received_at');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('currentPage');
+      localStorage.removeItem('currentPageHistory');
+      router.push('/'); 
     };
     const play = () => {
       if (!isPlaying.value && player.value) {
@@ -103,10 +135,10 @@ export default {
       return isPlaying.value ? 'pause' : 'play';
     });
 
-    onMounted(() => {
-      if (!podcast.value) {
-        router.push('/history');
-      } else if (player.value) {
+    onMounted(async () => {
+      await fetchPodcastHistory();
+      showPage.value = true;
+      if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
         });
@@ -114,6 +146,8 @@ export default {
     });
 
     return {
+      imageSrc,
+      audioSrc,
       playPauseClass,
       seekTo,
       podcast,
@@ -132,7 +166,8 @@ export default {
       onEnd,
       togglePlayPause,
       setVolume,
-      logout
+      logout,
+      showPage,
     };
   },
 };
@@ -141,10 +176,10 @@ export default {
 
 
 <template>
-  <div id="podcast-complaints">
+  <div id="podcast-complaints" v-if="showPage">
     <header>
       <div class="nav-buttons">
-        <router-link to="/metrics">Метрики</router-link>
+        <a href="https://appmetrica.yandex.ru/overview?period=week&group=day&currency=rub&accuracy=medium&appId=4569310">Метрики</a>
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
@@ -154,22 +189,23 @@ export default {
     <main>
       <div class="complaints-section">
         <div class="podcast-preview">
-          <img :src="podcast.imageUrl" alt="Podcast Image" />
-          <h2>{{ podcast.name }}</h2>
-          <p class="author">Автор: {{ podcast.author }}</p>
+          <img class="podcast-image":src="imageSrc" alt="Podcast Image" />
+          <h2 v-if="podcast" style="word-break: break-word;">{{ podcast.name }}</h2>
+          <!-- <p class="author">Автор: {{ podcast.author }}</p> -->
         </div>
 
         <div class="complaints">
           <h3>Причина решения</h3>
           <div class="solution">
-            <p> {{ podcast.solution }}</p>
+            <p v-if="podcast"> {{ podcast.verdict }}</p>
           </div>
         </div>
       </div>
       <div class="podcast-desription">
-        <p class="description">{{ podcast.description }}</p>
+        <h2 class="description" v-if="podcast">Описание</h2>
+        <p class="description" v-if="podcast">{{ podcast.description }}</p>
       </div>
-      <div class="wrapper">
+      <div class="wrapper" v-if="podcast">
         <div class="podcast-player">
           <audio ref="player" :src="podcast.audioUrl" @play="onPlay" @pause="onPause" @ended="onEnd">
             <source :src="podcast.audioUrl" type="audio/mpeg">
@@ -217,6 +253,8 @@ a {
 }
 .podcast-desription {
   margin: 20px 0 10px 0;
+  word-break: break-word;
+  width: 1280px;
 }
 .listOfComplaints {
   background-color: rgba(26, 27, 34, 0.7);
@@ -237,9 +275,11 @@ td {
 }
 .complaint-details p {
   padding-top: 2px;
+  width: 600px;
+  word-break: break-word;
 }
 .podcast-preview {
-  width: 100%;
+  width: 350px;
   height: auto;
 }
 .current-time {
@@ -266,30 +306,6 @@ td {
 .complaints-unit{
   display: block;
 }
-.delete {
-  display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
-  background-color: #FF453A;
-  color: #fff;
-  border: 1px solid #FF453A;
-  border-radius: 16px;
-  margin: 0 0;
-}
-.approve {
-  display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
-  background-color: #3067DE;
-  color: #fff;
-  border: 1px solid #3067DE;
-  border-radius: 16px;
-  margin: 0 0;
-}
 .menu {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -307,7 +323,7 @@ td {
   flex-direction: row;
   justify-content: center;
   gap: 5px;
-  margin: 5px 0 5px 0;
+  margin: 15px 0 15px 0;
 }
 .complaints-section {
   display: grid;
@@ -315,9 +331,9 @@ td {
 }
 .logout {
   display: block;
-  width: 196px;
-  height: 48px;
-  font-size: 30px;
+  width: 98px;
+  height: 36px;
+  font-size: 18px;
   padding: 5px;
   background-color: #FF453A;
   color: #fff;

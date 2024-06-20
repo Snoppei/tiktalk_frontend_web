@@ -24,21 +24,20 @@ export default {
     const pageSize = 7;
     const filteredComplaints = ref([]);
     const imageSrc = ref(null);
-    const audioSrc = ref(null); 
+    const audioSrc = ref(null);
+    const showPage = ref(false);
 
     const fetchPodcast = async () => {
       try {
         const response = await getPodcastById(podcastId);
         podcast.value = response.data;
 
-        const imageUrl = `${response.data.imageUrl}`; 
-        const audioUrl = `${response.data.audioUrl}`; 
+        const imageUrl = `${response.data.imageUrl}`;
+        const audioUrl = `${response.data.audioUrl}`;
 
         try {
           const imageResponse = await getFileByPodcastId(imageUrl);
           imageSrc.value = URL.createObjectURL(imageResponse.data);
-          console.log(imageUrl.slice(20));
-          console.log(imageUrl);
           const audioResponse = await getFileByPodcastId(audioUrl);
           audioSrc.value = URL.createObjectURL(audioResponse.data);
         } catch (error) {
@@ -56,9 +55,8 @@ export default {
       try {
         const response = await getReportsByPodcastId(podcastId, currentPage, pageSize, 'ID_DESC')
         filteredComplaints.value = response.data;
-        console.log('Reports:', filteredComplaints.value);
       } catch (error) {
-        console.log('Error fetching reports:', error);
+        console.log('Ошибка загрузки жалоб:', error);
       }
     }
 
@@ -72,9 +70,8 @@ export default {
       try {
         const response = await getPersonById(personId);
         author.value = response.data;
-        console.log('Author:', author.value);
       } catch (error) {
-        console.error('Error fetching author:', error);
+        console.error('Ошибка загрузки автора:', error);
       }
     };
 
@@ -83,24 +80,28 @@ export default {
     };
 
     const logout = () => {
-      localStorage.setItem('isAuthenticated', false);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('expires_in');
+      localStorage.removeItem('token_received_at');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('currentPage');
+      localStorage.removeItem('currentPageHistory');
       router.push('/');
     };
 
     watch(currentPage, () => {
       updateFilteredComplaints();
+      selectedComplaint.value = null; // Сбрасываем выбор жалобы
     });
 
     const totalPages = computed(() => {
-      return podcast.value ? Math.ceil(podcast.value.reports.length / pageSize)-1 : 0;
+      return podcast.value ? Math.ceil(podcast.value.reports.length / pageSize) - 1 : 0;
     });
 
     const prevPage = () => {
       if (currentPage.value > 0) {
-        console.log('Before: ', currentPage.value);
         currentPage.value--;
-        console.log('After: ', currentPage.value);
-        // fetchReports(currentPage.value);
       } else {
         currentPage.value = 0;
       }
@@ -108,9 +109,7 @@ export default {
 
     const nextPage = () => {
       if (currentPage.value < totalPages.value) {
-        console.log('Before: ', currentPage.value);
         currentPage.value++;
-        console.log('After: ', currentPage.value);
       } else {
         currentPage.value = totalPages.value;
       }
@@ -199,24 +198,27 @@ export default {
     const rejectComplaints = async () => {
       try {
         const response = await rejectReports(podcastId, solution.value);
-        console.log(response);
+        localStorage.setItem('currentPage', '1');
+        router.push('/podcasts');
       } catch (error) {
-        console.error('Error rejecting complaints:', error);
+        console.error('Ошибка отклонения жалоб:', error);
       }
     };
 
     const deletePodcast = async () => {
       try {
         const response = await banPodcast(podcastId, solution.value);
-        console.log(response);
+        localStorage.setItem('currentPage', '1');
+        router.push('/podcasts');
       } catch (error) {
-        console.error('Error banning podcast:', error);
+        console.error('Ошибка удаления подкаста:', error);
       }
     };
 
-    onMounted(() => {
-      fetchPodcast();
-      fetchReports();
+    onMounted(async () => {
+      await fetchPodcast();
+      await fetchReports();
+      showPage.value = true;
       if (player.value) {
         player.value.addEventListener('loadedmetadata', () => {
           remainingTime.value = formatTime(player.value.duration);
@@ -258,15 +260,16 @@ export default {
       deletePodcast,
       rejectComplaints,
       logout,
+      showPage,
     };
   },
 };
 </script>
 <template>
-  <div id="podcast-complaints">
+  <div id="podcast-complaints" v-if="showPage">
     <header>
       <div class="nav-buttons">
-        <router-link to="/metrics">Метрики</router-link>
+        <a href="https://appmetrica.yandex.ru/overview?period=week&group=day&currency=rub&accuracy=medium&appId=4569310">Метрики</a>
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
@@ -276,8 +279,8 @@ export default {
     <main>
       <div class="complaints-section" v-if="podcast">
         <div class="podcast-preview">
-          <img class="podcast-image":src="imageSrc" alt="Podcast Image" />
-          <h2>{{ podcast.name }}</h2>
+          <img class="podcast-image" :src="imageSrc" alt="Podcast Image" />
+          <h2 style="word-break: break-word;">{{ podcast.name }}</h2>
           <p class="author">Автор: {{ author ? author.name : 'Загрузка...' }}</p>
         </div>
 
@@ -288,7 +291,7 @@ export default {
               <table class="compl-table">
                 <tbody>
                   <tr v-for="complaint in filteredComplaints" :key="complaint.id" @click="selectComplaint(complaint)"
-                    style="cursor: pointer;">
+                    style="cursor: pointer;" :class="{ 'selected': selectedComplaint?.id === complaint.id }">
                     <td class="complaint-unit">{{ complaint.theme }}</td>
                   </tr>
                 </tbody>
@@ -296,8 +299,9 @@ export default {
               <div class="pagination">
                 <button class="pagination-button" @click="prevPage" :disabled="currentPage === 0"
                   style="cursor: pointer;">&lt</button>
-                    <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
-                      style="cursor: pointer;">></button>
+                <button class="pagination-button">{{ this.currentPage + 1 }}</button>
+                <button class="pagination-button" @click="nextPage" :disabled="currentPage === totalPages.value"
+                  style="cursor: pointer;">></button>
               </div>
             </div>
             <div class="complaint-details" v-if="selectedComplaint">
@@ -307,6 +311,7 @@ export default {
         </div>
       </div>
       <div class="podcast-desription" v-if="podcast">
+        <h2 class="description">Описание</h2>
         <p class="description">{{ podcast.description }}</p>
       </div>
       <div class="wrapper" v-if="podcast">
@@ -322,7 +327,8 @@ export default {
               <span class="remaining-time">{{ remainingTime }}</span>
             </div>
             <div class="seek-bar">
-              <input type="range" :value="progressPercentage" min="0" max="100" step="0.1" @input="seekTo($event.target.value)">
+              <input type="range" :value="progressPercentage" min="0" max="100" step="0.1"
+                @input="seekTo($event.target.value)">
             </div>
             <div class="volume-control">
               <input type="range" :value="volume" min="0" max="1" step="0.01" @input="setVolume($event.target.value)" />
@@ -331,13 +337,22 @@ export default {
         </div>
       </div>
       <div class="text-input-section">
-        <textarea v-model="solution" placeholder="Введите ваше решение" rows="4" cols="40"></textarea>
+        <textarea v-model="solution" placeholder="Введите ваше решение" rows="3" cols="50" maxlength="153"></textarea>
       </div>
       <div class="podcast-actions">
-        <button class="delete" v-if="solution" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution"><p>Удалить подкаст</p></button>
-        <button class="approve" v-if="solution" @click="rejectComplaints" style="cursor: pointer;" :disabled="!solution"><p>Отклонить жалобы</p></button>
-        <button class="delete-disabled" v-if="!solution" @click="deletePodcast" :disabled="solution"><p>Удалить подкаст</p></button>
-        <button class="approve-disabled" v-if="!solution" @click="rejectComplaints" :disabled="solution"><p>Отклонить жалобы</p></button>
+        <button class="delete" v-if="solution" @click="deletePodcast" style="cursor: pointer;" :disabled="!solution">
+          <p>Удалить подкаст</p>
+        </button>
+        <button class="approve" v-if="solution" @click="rejectComplaints" style="cursor: pointer;"
+          :disabled="!solution">
+          <p>Отклонить жалобы</p>
+        </button>
+        <button class="delete-disabled" v-if="!solution" @click="deletePodcast" :disabled="solution">
+          <p>Удалить подкаст</p>
+        </button>
+        <button class="approve-disabled" v-if="!solution" @click="rejectComplaints" :disabled="solution">
+          <p>Отклонить жалобы</p>
+        </button>
       </div>
     </main>
     <footer class="footer-podcast">
@@ -346,15 +361,25 @@ export default {
   </div>
 </template>
 <style>
+.description {
+  color: #b8b8b8;
+}
+
+.compl-table tr.selected .complaint-unit::after {
+  border-bottom-color: #3067DE;
+}
+
 .podcast-image {
-  max-width: 100%;
+  max-width: 320px;
   max-height: 300px;
   width: auto;
   height: auto;
 }
+
 .error-message {
   color: #FF453A;
 }
+
 .text-input-section {
   display: flex;
   flex-direction: column;
@@ -364,10 +389,14 @@ export default {
   background-color: rgba(26, 27, 34, 0.7);
   margin: 0 0 10px 0;
 }
+
 textarea {
+  border-radius: 10px;
+  padding: 15px;
   resize: none;
   cursor: text;
 }
+
 a {
   display: flex;
   justify-content: center;
@@ -378,8 +407,29 @@ a {
   height: 212px;
 }
 
+.compl-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.compl-table tbody {
+  width: 100%;
+}
+
+.compl-table tr {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+
+.compl-table td {
+  width: 100%;
+}
+
 .podcast-desription {
   margin: 20px 0 10px 0;
+  word-break: break-word;
+  width: 600px;
 }
 
 .listOfComplaints {
@@ -408,7 +458,7 @@ td {
 }
 
 .podcast-preview {
-  width: 100%;
+  width: 350px;
   height: auto;
 }
 
@@ -442,6 +492,7 @@ button p {
   background-color: #25252C;
   width: 100%;
   height: 100%;
+  border-radius: 10px;
 }
 
 .complaints-unit {
@@ -450,25 +501,22 @@ button p {
 
 .delete {
   display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
+  width: 180px;
+  height: 45px;
+  font-size: 18px;
+  padding: 10px 0 10px 0;
   background-color: #FF453A;
   color: #fff;
   border: 1px solid #FF453A;
   border-radius: 16px;
   margin: 0 0;
 }
-
-
-
 .approve {
   display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
+  width: 180px;
+  height: 45px;
+  font-size: 18px;
+  padding: 10px 0 10px 0;
   background-color: #3067DE;
   color: #fff;
   border: 1px solid #3067DE;
@@ -478,10 +526,10 @@ button p {
 
 .delete-disabled {
   display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
+  width: 180px;
+  height: 45px;
+  font-size: 18px;
+  padding: 10px 0 10px 0;
   background-color: #25252C;
   color: #757575;
   border: 1px solid #25252C;
@@ -491,10 +539,10 @@ button p {
 
 .approve-disabled {
   display: block;
-  width: 300px;
-  height: 64px;
-  font-size: 30px;
-  padding: 10px;
+  width: 180px;
+  height: 45px;
+  font-size: 18px;
+  padding: 10px 0 10px 0;
   background-color: #25252C;
   color: #757575;
   border: 1px solid #25252C;
@@ -515,14 +563,29 @@ button p {
   margin-top: 2px;
   margin-bottom: 2px;
   background-color: #1A1B22;
+  position: relative;
 }
+
+.complaint-unit::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-bottom: 1px solid #757575;
+}
+
+.complaint-unit:hover::after {
+  border-bottom-color: #3067DE;
+}
+
 
 .pagination {
   display: flex;
   flex-direction: row;
   justify-content: center;
   gap: 5px;
-  margin: 5px 0 5px 0;
+  margin: 15px 0 5px 0;
 }
 
 .complaints-section {
@@ -532,9 +595,9 @@ button p {
 
 .logout {
   display: block;
-  width: 196px;
-  height: 48px;
-  font-size: 30px;
+  width: 98px;
+  height: 36px;
+  font-size: 18px;
   padding: 5px;
   background-color: #FF453A;
   color: #fff;

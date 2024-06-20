@@ -1,18 +1,74 @@
 <script>
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { authenticate } from '../model/keycloak';
 
 export default {
   setup() {
     const router = useRouter();
+    const login = ref('');
+    const password = ref('');
+    const authError = ref(null);
 
-    const onSubmit = () => {
-      router.push('/podcasts');
-    }
-    localStorage.setItem('isAuthenticated', true);
+    const onSubmit = async () => {
+      authError.value = null;
+
+      try {
+        const response = await authenticate(login.value, password.value);
+        if (!response || !response.access_token) { 
+          authError.value = 'Неправильный логин или пароль.';
+          return;
+        }
+        const accessToken = response.access_token;
+
+        const roles = getRolesFromAccessToken(accessToken);
+        if (!roles.includes('ADMIN')) {
+          authError.value = 'Неправильный логин или пароль.';
+          return; 
+        }
+
+        localStorage.setItem('access_token', response.access_token);
+        localStorage.setItem('refresh_token', response.refresh_token);
+        localStorage.setItem('expires_in', response.expires_in);
+        localStorage.setItem('token_received_at', Math.floor(Date.now() / 1000));
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('currentPage', '1');
+        localStorage.setItem('currentPageHistory', '1');
+
+        router.push('/podcasts');
+      } catch (error) {
+        if (error.response && error.response.status === 401) {
+          authError.value = 'Неверный логин или пароль.';
+          return;
+        } else {
+          authError.value = 'Произошла ошибка авторизации. Попробуйте позже.';
+          return;
+        }
+        return;
+      }
+    };
+
+    const getRolesFromAccessToken = (token) => {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.realm_access.roles || [];
+      } catch (error) {
+        return [];
+      }
+    };
+
+    onMounted(() => {
+      if (localStorage.getItem('isAuthenticated') === 'true') {
+        router.push('/podcasts');
+      }
+    });
 
     return {
+      login,
+      password,
+      authError,
       onSubmit
-    }
+    };
   }
 }
 </script>
@@ -24,21 +80,38 @@ export default {
     </div>
     <div class="form-container">
       <h1>Авторизация</h1>
-      <form @submit="onSubmit">
+
+      <form @submit.prevent="onSubmit">
         <div>
           <p>Логин</p>
-          <input class="fields" type="text" v-model="login" placeholder="">
+          <input class="fields" type="text" v-model="login" placeholder="Введите логин" minlength="1" maxlength="30">
         </div>
         <div>
           <p>Пароль</p>
-          <input class="fields" type="text" v-model="password" placeholder="">
+          <input class="fields" type="password" v-model="password" placeholder="Введите пароль" minlength="1" maxlength="50">
         </div>
+
+        <div class="error-message-container"> 
+          <div v-if="authError" class="error-message">
+            {{ authError }}
+          </div>
+        </div>
+
         <button class="auth" type="submit" style="cursor: pointer;">Войти</button>
       </form>
     </div>
   </div>
 </template>
+
 <style>
+.error-message-container {
+  height: 20px;
+  margin-bottom: 10px;
+}
+
+.error-message {
+  color: red;
+}
 form {
   display: flex;
   flex-direction: column;
@@ -81,9 +154,9 @@ h1 {
 
 .auth {
   display: block;
-  width: 50%;
-  height: 64px;
-  font-size: 32px;
+  width: 160px;
+  height: 60px;
+  font-size: 30px;
   padding: 10px;
   background-color: #3067DE;
   color: #fff;

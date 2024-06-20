@@ -1,60 +1,103 @@
 <script>
-import { useStore } from 'vuex';
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { mapState, mapActions } from 'vuex';
 
 export default {
-  setup() {
-    const store = useStore();
-    const podcasts = store.getters.HISTORY || [];
-    const router = useRouter();
-    const currentPage = ref(1);
-    const pageSize = 15;
-
-    const totalPages = computed(() => Math.ceil(podcasts.length / pageSize));
-
-    const hasNextPage = computed(() => currentPage.value < totalPages.value);
-
-    const prevPage = () => {
-      if (currentPage.value > 1) {
-        currentPage.value--;
-      }
-    };
-
-    const logout = () => {
-      localStorage.setItem('isAuthenticated', false);
-      router.push('/');
-    };
-
-    const nextPage = () => {
-      if (currentPage.value < totalPages.value) {
-        currentPage.value++;
-      }
-    };
-
-    const paginatedPodcasts = computed(() => {
-      const startIndex = (currentPage.value - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      return podcasts.slice(startIndex, endIndex);
-    });
-
-    return {
-      paginatedPodcasts,
-      currentPage,
-      totalPages,
-      hasNextPage,
-      prevPage,
-      nextPage,
-      logout
-    };
+  computed: {
+    ...mapState('podcasts', ['history', 'currentPageHistory', 'pageSizeHistory']),
+    hasNextPageHistory() {
+      return this.history.length === this.pageSizeHistory;
+    },
+    hasPrevPageHistory() {
+      return this.currentPageHistory > 1;
+    },
+    paginatedHistory() {
+      return this.history || [];
+    },
   },
+  methods: {
+    ...mapActions('podcasts', ['fetchHistoryPodcasts', 'setCurrentPageHistory', 'setCurrentPage']),
+    logout() {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('expires_in');
+      localStorage.removeItem('token_received_at');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('currentPage');
+      localStorage.removeItem('currentPageHistory');
+      this.$router.push('/');
+    },
+    prevPage() {
+      if (this.hasPrevPageHistory) {
+        this.setCurrentPageHistory(this.currentPageHistory - 1);
+      }
+    },
+    nextPage() {
+      if (this.hasNextPageHistory) {
+        this.setCurrentPageHistory(this.currentPageHistory + 1);
+      }
+    },
+    updateCurrentPageHistory(page) {
+      localStorage.setItem('currentPageHistory', page);
+      this.setCurrentPageHistory(page);
+    },
+    formatDuration(duration) {
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
+  },
+  watch: {
+    paginatedHistory: {
+      immediate: true, 
+      handler(newHistory) {
+        if (newHistory.length === 0 && this.currentPageHistory > 1) {
+          this.setCurrentPage(this.currentPageHistory - 1);
+        }
+        newHistory.forEach((podcast) => {
+          if (podcast.audioUrl && !podcast.duration) {
+            this.$store.dispatch('podcasts/fetchPodcastDurationHistory', podcast.id)
+              .catch((error) => {
+                console.error(`Ошибка получения длительности:`, error);
+                this.$set(podcast, 'duration', null); 
+                this.$set(podcast, 'durationError', 'Не удалось получить длительность');
+              });
+          }
+        });
+      },
+    },
+  },
+  mounted() {
+    const savedPage = localStorage.getItem('currentPageHistory');
+    if (savedPage) {
+      this.setCurrentPageHistory(Number(savedPage));
+      this.fetchHistoryPodcasts()
+        .then(() => {
+          setTimeout(() => {
+            this.showPage = true; 
+          }, 50);
+        });
+    } else {
+      this.fetchHistoryPodcasts()
+        .then(() => {
+          setTimeout(() => {
+            this.showPage = true; 
+          }, 50);
+        });
+    }
+  },
+  data() {
+    return {
+      showPage: false
+    };
+  }
 };
 </script>
+
 <template>
-  <div class="podcast-page">
+  <div class="podcast-page" v-if="showPage">
     <header>
       <div class="nav-buttons">
-        <router-link to="/metrics">Метрики</router-link>
+        <a href="https://appmetrica.yandex.ru/overview?period=week&group=day&currency=rub&accuracy=medium&appId=4569310">Метрики</a>
         <router-link to="/podcasts">Список подкастов</router-link>
         <router-link to="/history">История</router-link>
       </div>
@@ -62,29 +105,35 @@ export default {
     </header>
     <main>
       <div class="list">
-        <h1>Список подкастов с жалобами</h1>
+        <h1>История</h1>
         <table class="podcasts">
           <thead>
-            <tr class="tr-list">
+            <tr class="tr-list1">
               <th>Название</th>
               <th>Действие</th>
-              <th>Длительность</th>
+              <th>Длительность</th> 
             </tr>
           </thead>
           <tbody>
-            <tr class="tr-list" v-for="podcast in paginatedPodcasts" :key="podcast.id">
+            <tr class="tr-list" v-for="podcast in paginatedHistory" :key="podcast.id">
               <td>
                 <router-link :to="`/history/${podcast.id}`">{{ podcast.name }}</router-link>
               </td>
-              <td>{{ podcast.decision }}</td>
-              <td>{{ podcast.duration }}</td>
+              <td>
+                <router-link :to="`/history/${podcast.id}`">
+                  {{ podcast.reportType === 'DELETE' ? 'Удален' : 'Жалобы отклонены' }}
+                </router-link>
+              </td> 
+              <td>
+                <router-link :to="`/history/${podcast.id}`">{{ podcast.duration ? formatDuration(podcast.duration) : '' }}</router-link>
+              </td>  
             </tr>
           </tbody>
         </table>
         <div class="pagination">
-          <button class="pagination-button" @click="prevPage" :disabled="currentPage === 1" style="cursor: pointer;">&lt</button>
-              <button class="pagination-button" @click="nextPage" :disabled="!hasNextPage"
-                style="cursor: pointer;">></button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPageHistory === 1" style="cursor: pointer;"><</button>
+          <button class="pagination-button" @click="prevPage" :disabled="currentPageHistory === 1">{{ currentPageHistory }}</button>
+          <button class="pagination-button" @click="nextPage" :disabled="!hasNextPageHistory" style="cursor: pointer;">></button>
         </div>
       </div>
     </main>
@@ -93,12 +142,13 @@ export default {
     </footer>
   </div>
 </template>
+
 <style>
 .logout {
   display: block;
-  width: 196px;
-  height: 48px;
-  font-size: 30px;
+  width: 98px;
+  height: 36px;
+  font-size: 18px;
   padding: 5px;
   background-color: #FF453A;
   color: #fff;
@@ -117,9 +167,30 @@ thead {
   width: 100%;
 }
 
+.tr-list1 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 7px 0 8px 0;
+  position: relative;
+}
+
 .tr-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  margin: 7px 0 8px 0;
+  position: relative;
+}
+
+.tr-list::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-bottom: 1px solid #757575;
+}
+.tr-list:hover::after { 
+  border-bottom-color: #3067DE;
 }
 
 td {
@@ -136,6 +207,7 @@ footer {
   display: flex;
   flex-direction: row;
   gap: 5px;
+  margin: 15px 0 15px 0;
 }
 
 .list {
@@ -145,7 +217,7 @@ footer {
   align-items: center;
   padding: 5px;
   width: 1280px;
-
+  border-radius: 10px;
 }
 
 .podcast-page {
@@ -162,9 +234,9 @@ header {
 
 .pagination-button {
   display: block;
-  width: 60px;
-  height: 60px;
-  font-size: 32px;
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
   padding: 10px;
   background-color: #1A1B22;
   color: #fff;
