@@ -4,7 +4,7 @@
 
 ## Ссылка на Tiktalk Admin
 
- [https://web.tiktalkapp.ru/](https://web.tiktalkapp.ru/)
+ [https://web.tiktalkapp.ru/](https://web.tiktalkapp.ru/) (хост - всё, умер)
 
 ## Логин и пароль от TikTalk Admin
  Логин: WebAdmin1  
